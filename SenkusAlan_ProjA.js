@@ -50,10 +50,14 @@ function gridVerts() {
   return g_mdl_grid
 }
 
-function VBObox0() {
+///////////////////////////////////
+// WORLD GRID
+///////////////////////////////////
+
+function WorldGrid() {
 //=============================================================================
 //=============================================================================
-// CONSTRUCTOR for one re-usable 'VBObox0' object that holds all data and fcns
+// CONSTRUCTOR for one re-usable 'WorldGrid' object that holds all data and fcns
 // needed to render vertices from one Vertex Buffer Object (VBO) using one 
 // separate shader program (a vertex-shader & fragment-shader pair) and one
 // set of 'uniform' variables.
@@ -112,7 +116,7 @@ function VBObox0() {
   console.assert((this.vboFcount_a_Pos0 +     // check the size of each and
                   this.vboFcount_a_Colr0) *   // every attribute in our VBO
                   this.FSIZE == this.vboStride, // for agreeement with'stride'
-                  "Uh oh! VBObox0.vboStride disagrees with attribute-size values!");
+                  "Uh oh! WorldGrid.vboStride disagrees with attribute-size values!");
 
               //----------------------Attribute offsets  
   this.vboOffset_a_Pos0 = 0;    // # of bytes from START of vbo to the START
@@ -141,7 +145,7 @@ function VBObox0() {
   this.u_ProjMatLoc;							// GPU location for u_ProjMat uniform
 }
 
-VBObox0.prototype.init = function() {
+WorldGrid.prototype.init = function() {
 //=============================================================================
 // Prepare the GPU to use all vertices, GLSL shaders, attributes, & uniforms 
 // kept in this VBObox. (This function usually called only once, within main()).
@@ -238,7 +242,7 @@ VBObox0.prototype.init = function() {
   }
 }
 
-VBObox0.prototype.switchToMe = function() {
+WorldGrid.prototype.switchToMe = function() {
 //==============================================================================
 // Set GPU to use this VBObox's contents (VBO, shader, attributes, uniforms...)
 //
@@ -294,7 +298,7 @@ VBObox0.prototype.switchToMe = function() {
   gl.enableVertexAttribArray(this.a_ColrLoc);
 }
 
-VBObox0.prototype.isReady = function() {
+WorldGrid.prototype.isReady = function() {
 //==============================================================================
 // Returns 'true' if our WebGL rendering context ('gl') is ready to render using
 // this objects VBO and shader program; else return false.
@@ -315,7 +319,7 @@ var isOK = true;
   return isOK;
 }
 
-VBObox0.prototype.adjust = function() {
+WorldGrid.prototype.adjust = function() {
 //==============================================================================
 // Update the GPU to newer, current values we now store for 'uniform' vars on 
 // the GPU; and (if needed) update each attribute's stride and offset in VBO.
@@ -339,7 +343,7 @@ VBObox0.prototype.adjust = function() {
   gl.uniformMatrix4fv(this.u_ProjMatLoc, false, this.ProjMat.elements);
 }
 
-VBObox0.prototype.draw = function() {
+WorldGrid.prototype.draw = function() {
 //=============================================================================
 // Render current VBObox contents.
 
@@ -356,7 +360,7 @@ VBObox0.prototype.draw = function() {
                   this.vboVerts);		// number of vertices to draw on-screen.
 }
 
-VBObox0.prototype.reload = function() {
+WorldGrid.prototype.reload = function() {
 //=============================================================================
 // Over-write current values in the GPU inside our already-created VBO: use 
 // gl.bufferSubData() call to re-transfer some or all of our Float32Array 
@@ -368,3 +372,7 @@ VBObox0.prototype.reload = function() {
                     this.vboContents);   // the JS source-data array used to fill VBO
 
 }
+
+///////////////////////////////////
+// WORLD GRID
+///////////////////////////////////
