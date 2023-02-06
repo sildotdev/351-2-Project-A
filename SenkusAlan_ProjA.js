@@ -581,7 +581,7 @@ PartSys.prototype.switchToMe = function () {
   );
   gl.enableVertexAttribArray(this.a_PositionID);
 
-  gl.uniform1i(this.u_runModeID, this.runMode);
+  // gl.uniform1i(this.u_runModeID, 5);
 }
 
 PartSys.prototype.adjust = function () {
@@ -709,7 +709,7 @@ PartSys.prototype.initBouncy2D = function (count) {
     return;
   }
   // Set the initial values of all uniforms on GPU: (runMode set by keyboard callbacks)
-  gl.uniform1i(this.u_runModeID, this.runMode);
+  // gl.uniform1i(this.u_runModeID, this.runMode);
 };
 
 PartSys.prototype.initBouncy3D = function (count) {
@@ -823,13 +823,15 @@ PartSys.prototype.solver = function () {
         this.s1[PART_XPOS] + this.s1[PART_XVEL] * (g_timeStep * 0.001);
       this.s2[PART_YPOS] =
         this.s1[PART_YPOS] + this.s1[PART_YVEL] * (g_timeStep * 0.001);
+      this.s2[PART_ZPOS] =
+        this.s1[PART_ZPOS] + this.s1[PART_ZVEL] * (g_timeStep * 0.001);
       // -- apply acceleration due to gravity to current velocity:
       // 	s2[PART_YVEL] = s1[PART_YVEL] - (accel. due to gravity)*(timestep in seconds)
       //									"       "     - (9.832 meters/sec^2) * (g_timeStep/1000.0);
       this.s2[PART_XVEL] = this.s1[PART_XVEL]; // (apply ONLY to y direction)
-      this.s2[PART_YVEL] =
-        this.s1[PART_YVEL] - this.grav * (g_timeStep * 0.001);
-      this.s2[PART_ZVEL] = this.s1[PART_ZVEL];
+      this.s2[PART_YVEL] = this.s1[PART_YVEL]
+      this.s2[PART_ZVEL] =
+        this.s1[PART_ZVEL] - this.grav * (g_timeStep * 0.001);
       // -- apply drag: attenuate current velocity:
       this.s2[PART_XVEL] *= this.drag;
       this.s2[PART_YVEL] *= this.drag;
@@ -883,9 +885,9 @@ PartSys.prototype.solver = function () {
       // s2[PART_YVEL] = s1[PART_YVEL] - (accel. due to gravity)*(g_timestep in seconds)
       //        "               "      - (9.832 meters/sec^2) * (g_timeStep/1000.0);
       this.s2[PART_XVEL] = this.s1[PART_XVEL]; // (apply ONLY to y direction)
-      this.s2[PART_YVEL] =
-        this.s1[PART_YVEL] - this.grav * (g_timeStep * 0.001);
-      this.s2[PART_ZVEL] = this.s1[PART_ZVEL];
+      this.s2[PART_YVEL] = this.s1[PART_YVEL];
+      this.s2[PART_ZVEL] =
+        this.s1[PART_ZVEL] - this.grav * (g_timeStep * 0.001);
       // -- apply drag: attenuate current velocity:
       this.s2[PART_XVEL] *= this.drag;
       this.s2[PART_YVEL] *= this.drag;
@@ -894,6 +896,7 @@ PartSys.prototype.solver = function () {
       // CAREFUL! must convert g_timeStep from milliseconds to seconds!
       this.s2[PART_XPOS] += this.s2[PART_XVEL] * (g_timeStep * 0.001);
       this.s2[PART_YPOS] += this.s2[PART_YVEL] * (g_timeStep * 0.001);
+      this.s2[PART_ZPOS] += this.s2[PART_ZVEL] * (g_timeStep * 0.001);
       // What's the result of this rearrangement?
       //	IT WORKS BEAUTIFULLY! much more stable much more often...
       break;
