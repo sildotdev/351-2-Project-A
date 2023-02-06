@@ -487,6 +487,41 @@ const NU_EPSILON = 10e-15; // tiny amount; a minimum vector length
 //=============================================================================
 //=============================================================================
 function PartSys() {
+  this.VERT_SRC = 
+  `precision mediump float;							// req'd in OpenGL ES if we use 'float'
+  //
+  uniform   int u_runMode;							// particle system state: 
+  																			// 0=reset; 1= pause; 2=step; 3=run
+  uniform	 vec4 u_ballShift;						// single bouncy-ball's movement
+  attribute vec4 a_Position;
+  varying   vec4 v_Color; 
+  void main() {
+    gl_PointSize = 20.0;
+  	 gl_Position = a_Position + u_ballShift; 
+	// Let u_runMode determine particle color:
+    if(u_runMode == 0) { 
+		   v_Color = vec4(1.0, 0.0, 0.0, 1.0);	// red: 0==reset
+	  	 } 
+	  else if(u_runMode == 1) { 
+	    v_Color = vec4(1.0, 1.0, 0.0, 1.0);		// yellow: 1==pause
+	    }  
+	  else if(u_runMode == 2) { 
+	    v_Color = vec4(1.0, 1.0, 1.0, 1.0);		// white: 2==step
+      } 
+	  else { 
+	    v_Color = vec4(0.2, 1.0, 0.2, 1.0);		// green: >3==run
+			 } 
+  }`;
+
+  this.FRAG_SRC =
+  `precision mediump float;
+   varying vec4 v_Color; 
+   void main() { 
+     float dist = distance(gl_PointCoord, vec2(0.5, 0.5)); 
+     if(dist < 0.5) { 
+       gl_FragColor = vec4((1.0-2.0*dist)*v_Color.rgb, 1.0); 
+     } else { discard; } 
+   }`;
   //==============================================================================
   //=============================================================================
   // Constructor for a new particle system;
@@ -500,8 +535,39 @@ function PartSys() {
 // the particle-system to run without any further adjustments.
 
 PartSys.prototype.init = function () {
-  this.initBouncy2D(1000);
+  this.shaderLoc = createProgram(gl, this.VERT_SRC, this.FRAG_SRC);
+  if (!this.shaderLoc) {
+    console.log(
+      this.constructor.name +
+        ".init() failed to create executable Shaders on the GPU. Bye!"
+    );
+    return;
+  }
+
+  gl.program = this.shaderLoc; // (to match cuon-utils.js -- initShaders())
+
+  this.initBouncy2D(3);
 };
+
+PartSys.prototype.switchToMe = function () {
+  gl.useProgram(this.shaderLoc);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, this.vboID);
+
+  gl.vertexAttribPointer(
+    this.a_PositionID,
+    4,
+    gl.FLOAT,
+    false,
+    PART_MAXVAR * this.FSIZE,
+    PART_XPOS * this.FSIZE
+  );
+  gl.enableVertexAttribArray(this.a_PositionID);
+}
+
+PartSys.prototype.adjust = function () {
+
+}
 
 PartSys.prototype.initBouncy2D = function (count) {
   //==============================================================================
