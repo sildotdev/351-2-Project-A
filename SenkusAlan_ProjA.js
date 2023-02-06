@@ -580,7 +580,7 @@ PartSys.prototype.init = function () {
 
   gl.program = this.shaderLoc; // (to match cuon-utils.js -- initShaders())
 
-  this.initBouncy2D(300);
+  this.initBouncy3D(300);
 };
 
 PartSys.prototype.switchToMe = function () {
@@ -627,7 +627,7 @@ PartSys.prototype.roundRand = function() {
           this.randZ*this.randZ >= 1.0); 
   }
 
-PartSys.prototype.initBouncy2D = function (count) {
+PartSys.prototype.initBouncy3D = function (count) {
 //==============================================================================
   // Create all state-variables-------------------------------------------------
   this.partCount = count;
@@ -657,7 +657,7 @@ PartSys.prototype.initBouncy2D = function (count) {
   this.forceList.push(fTmp);      // append this 'gravity' force object to 
                                   // the forceList array of force-causing objects.
   // Report:
-  console.log("PartSys.initBouncy2D() created PartSys.forceList[] array of ");
+  console.log("PartSys.initBouncy3D() created PartSys.forceList[] array of ");
   console.log("\t\t", this.forceList.length, "CForcer objects:");
   for(i=0; i<this.forceList.length; i++) {
     console.log("CForceList[",i,"]");
@@ -679,7 +679,7 @@ PartSys.prototype.initBouncy2D = function (count) {
   this.limitList.push(cTmp);      // append this 'box' constraint object to the
                                   // 'limitList' array of constraint-causing objects.                                
   // Report:
-  console.log("PartSys.initBouncy2D() created PartSys.limitList[] array of ");
+  console.log("PartSys.initBouncy3D() created PartSys.limitList[] array of ");
   console.log("\t\t", this.limitList.length, "CLimit objects.");
 
   this.INIT_VEL =  0.15 * 60.0;		// initial velocity in meters/sec.
@@ -815,10 +815,6 @@ PartSys.prototype.initBouncy2D = function (count) {
   }
   // Set the initial values of all uniforms on GPU: (runMode set by keyboard)
 	gl.uniform1i(this.u_runModeID, this.runMode);
-};
-
-PartSys.prototype.initBouncy3D = function (count) {
-
 };
 
 PartSys.prototype.initFireReeves = function (count) {
