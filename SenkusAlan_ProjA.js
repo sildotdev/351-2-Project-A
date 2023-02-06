@@ -944,7 +944,7 @@ PartSys.prototype.doConstraints = function () {
     // velocity, but with the ball even further below the floor. As this cycle
     // repeats, the ball slowly sinks further and further downwards.
     // THUS the floor needs this position-enforcing constraint as well:
-    if (this.s2[PART_YPOS] < -0.9) this.s2[PART_YPOS] = -0.9;
+    if (this.s2[PART_ZPOS] < 0) this.s2[PART_ZPOS] = 0;
     // Our simple 'bouncy-ball' particle system needs this position-limiting
     // constraint ONLY for the floor and not the walls, as no forces exist that
     // could 'push' a zero-velocity particle against the wall. But suppose we
@@ -1039,10 +1039,10 @@ PartSys.prototype.doConstraints = function () {
       // ('diagnostic printing' code was here in earlier versions.)
     }
 
-    if (this.s2[PART_YPOS] < -0.9 && this.s2[PART_YVEL] < 0.0) {
+    if (this.s2[PART_ZPOS] < 0.0 && this.s2[PART_ZVEL] < 0.0) {
       // collision! floor...
       // Diagnostic printing.  This revealed 'VERY SUBTLE PROBLEM' explained above.
-      console.log("y<0 bounce: " + g_stepCount + "-(BEFORE)------------------");
+      console.log("z<0 bounce: " + g_stepCount + "-(BEFORE)------------------");
       res = 5;
       console.log(
         " s1(xPos,yPos): (" +
@@ -1067,7 +1067,7 @@ PartSys.prototype.doConstraints = function () {
           ");"
       );
 
-      this.s2[PART_YPOS] = -0.9; // 1) resolve contact: put particle at wall.
+      this.s2[PART_ZPOS] = 0; // 1) resolve contact: put particle at wall.
       // 2) repair velocity: remove all erroneous y
       // velocity gained from forces applied while the
       // ball moved thru wall during this timestep. HOW?
@@ -1075,8 +1075,8 @@ PartSys.prototype.doConstraints = function () {
       // reached wall at START of the timestep; thus
       // ALL the timesteps' velocity changes after s1
       // were erroneous. Let's go back to that velocity:
-      this.s2[PART_YVEL] = this.s1[PART_YVEL]; // copy from START of timestep.
-      this.s2[PART_YVEL] *= this.drag;
+      this.s2[PART_ZVEL] = this.s1[PART_ZVEL]; // copy from START of timestep.
+      this.s2[PART_ZVEL] *= this.drag;
       // **BUT** velocity during our timestep is STILL
       // reduced by drag (and any other forces
       // proportional to velocity, and thus not
@@ -1085,15 +1085,15 @@ PartSys.prototype.doConstraints = function () {
       //reversed velocity*coeff-of-restitution.
       // CAREFUL! Did velocity-reversal already happen between s1 and s2?
       // (see above comment: 'ATTENTION: VERY SUBTLE PROBLEM HERE!---------...)
-      if (this.s2[PART_YVEL] < 0.0)
+      if (this.s2[PART_ZVEL] < 0.0)
         // ball still moving past wall in s2?
         //Yes (no sign change). Do a normal sign-changing bounce:
-        this.s2[PART_YVEL] *= -this.resti;
+        this.s2[PART_ZVEL] *= -this.resti;
       // NO!  velocity sign already changed between s1 and s2!
       // sign already changed-- 'wall bounce' needs no sign-change:
-      else this.s2[PART_YVEL] *= this.resti;
+      else this.s2[PART_ZVEL] *= this.resti;
       // Diagnostic printing. This revealed 'VERY SUBTLE PROBLEM' explained above.
-      console.log("y<0 bounce: " + g_stepCount + "-(AFTER)------------------");
+      console.log("z<0 bounce: " + g_stepCount + "-(AFTER)------------------");
       res = 5;
       console.log(
         "      s1(xPos,yPos): (" +
