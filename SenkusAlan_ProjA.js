@@ -499,6 +499,7 @@ function PartSys() {
   uniform mat4 u_ViewMat;
   uniform mat4 u_ProjMat;
   attribute vec4 a_Position;
+  attribute float a_LifeLeft;
   varying   vec4 v_Color; 
   void main() {
     gl_PointSize = 20.0;
@@ -506,16 +507,16 @@ function PartSys() {
     gl_Position = MVP * a_Position + u_ballShift;
 	// Let u_runMode determine particle color:
     if(u_runMode == 0) { 
-		   v_Color = vec4(1.0, 0.0, 0.0, 1.0);	// red: 0==reset
+		   v_Color = vec4(1.0, 0.0, a_LifeLeft, a_LifeLeft);	// red: 0==reset
 	  	 } 
 	  else if(u_runMode == 1) { 
-	    v_Color = vec4(1.0, 1.0, 0.0, 1.0);		// yellow: 1==pause
+	    v_Color = vec4(1.0, 1.0, 0.0, a_LifeLeft);		// yellow: 1==pause
 	    }  
 	  else if(u_runMode == 2) { 
-	    v_Color = vec4(1.0, 1.0, 1.0, 1.0);		// white: 2==step
+	    v_Color = vec4(1.0, 1.0, 1.0, a_LifeLeft);		// white: 2==step
       } 
 	  else { 
-	    v_Color = vec4(0.2, 1.0, 0.2, 1.0);		// green: >3==run
+	    v_Color = vec4(0.2, 1.0, 0.2, a_LifeLeft);		// green: >3==run
 			 } 
   }`;
 
@@ -673,7 +674,7 @@ PartSys.prototype.initBouncy3D = function (count) {
   cTmp.partCount = -1;            // through all the rest of them.
   cTmp.xMin = -1.0; cTmp.xMax = 1.0;  // box extent:  +/- 1.0 box at origin
   cTmp.yMin = -1.0; cTmp.yMax = 1.0;
-  cTmp.zMin = -1.0; cTmp.zMax = 1.0;
+  cTmp.zMin = 0.0; cTmp.zMax = 2.0;
   cTmp.Kresti = 1.0;              // bouncyness: coeff. of restitution.
                                   // (and IGNORE all other CLimit members...)
   this.limitList.push(cTmp);      // append this 'box' constraint object to the
@@ -724,7 +725,7 @@ PartSys.prototype.initBouncy3D = function (count) {
     // set random positions in a 0.1-radius ball centered at (-0.8,-0.8,-0.8)
     this.s1[j + PART_XPOS] = -0.8 + 0.1*this.randX; 
     this.s1[j + PART_YPOS] = -0.8 + 0.1*this.randY;  
-    this.s1[j + PART_ZPOS] = -0.8 + 0.1*this.randZ;
+    this.s1[j + PART_ZPOS] = 0.8 + 0.1*this.randZ;
     this.s1[j + PART_WPOS] =  1.0;      // position 'w' coordinate;
     this.roundRand(); // Now choose random initial velocities too:
     this.s1[j + PART_XVEL] =  this.INIT_VEL*(0.4 + 0.2*this.randX);
@@ -814,7 +815,7 @@ PartSys.prototype.initBouncy3D = function (count) {
   	return;
   }
   // Set the initial values of all uniforms on GPU: (runMode set by keyboard)
-	gl.uniform1i(this.u_runModeID, this.runMode);
+	// gl.uniform1i(this.u_runModeID, this.runMode);
 };
 
 PartSys.prototype.initFireReeves = function (count) {
@@ -1051,7 +1052,7 @@ case SOLV_OLDGOOD://------------------------------------------------------------
   //                  -= (9.832 meters/sec^2) * (g_timeStep/1000.0);
   var j = 0;  // i==particle number; j==array index for i-th particle
   for(var i = 0; i < this.partCount; i += 1, j+= PART_MAXVAR) {
-    this.s2[j + PART_YVEL] -= this.grav*(g_timeStep*0.001);
+    this.s2[j + PART_ZVEL] -= this.grav*(g_timeStep*0.001);
     // -- apply drag: attenuate current velocity:
     this.s2[j + PART_XVEL] *= this.drag;
     this.s2[j + PART_YVEL] *= this.drag;
