@@ -493,11 +493,15 @@ function PartSys() {
   uniform   int u_runMode;							// particle system state: 
   																			// 0=reset; 1= pause; 2=step; 3=run
   uniform	 vec4 u_ballShift;						// single bouncy-ball's movement
+  uniform mat4 u_ModelMat;
+  uniform mat4 u_ViewMat;
+  uniform mat4 u_ProjMat;
   attribute vec4 a_Position;
   varying   vec4 v_Color; 
   void main() {
     gl_PointSize = 20.0;
-  	 gl_Position = a_Position + u_ballShift; 
+    mat4 MVP = u_ProjMat * u_ViewMat * u_ModelMat;
+    gl_Position = MVP * a_Position + u_ballShift;
 	// Let u_runMode determine particle color:
     if(u_runMode == 0) { 
 		   v_Color = vec4(1.0, 0.0, 0.0, 1.0);	// red: 0==reset
@@ -525,6 +529,15 @@ function PartSys() {
   //==============================================================================
   //=============================================================================
   // Constructor for a new particle system;
+
+  this.ModelMat = new Matrix4();	// Transforms CVV axes to model axes.
+  this.u_ModelMatLoc;							// GPU location for u_ModelMat uniform
+
+  this.ViewMat = new Matrix4();	// Transforms World axes to CVV axes.
+  this.u_ViewMatLoc;							// GPU location for u_ViewMat uniform
+
+  this.ProjMat = new Matrix4();	// Transforms CVV axes to clip axes.
+  this.u_ProjMatLoc;							// GPU location for u_ProjMat uniform
 }
 
 // INIT FUNCTIONS:
@@ -543,6 +556,10 @@ PartSys.prototype.init = function () {
     );
     return;
   }
+
+  this.u_ModelMatLoc = gl.getUniformLocation(this.shaderLoc, "u_ModelMat");
+  this.u_ViewMatLoc = gl.getUniformLocation(this.shaderLoc, "u_ViewMat");
+  this.u_ProjMatLoc = gl.getUniformLocation(this.shaderLoc, "u_ProjMat");
 
   gl.program = this.shaderLoc; // (to match cuon-utils.js -- initShaders())
 
@@ -563,10 +580,17 @@ PartSys.prototype.switchToMe = function () {
     PART_XPOS * this.FSIZE
   );
   gl.enableVertexAttribArray(this.a_PositionID);
+
+  gl.uniform1i(this.u_runModeID, this.runMode);
 }
 
 PartSys.prototype.adjust = function () {
+  this.ModelMat.setIdentity();
+  this.ModelMat.set(g_worldMat);
 
+  gl.uniformMatrix4fv(this.u_ModelMatLoc, false, this.ModelMat.elements);
+  gl.uniformMatrix4fv(this.u_ViewMatLoc, false, this.ViewMat.elements);
+  gl.uniformMatrix4fv(this.u_ProjMatLoc, false, this.ProjMat.elements);
 }
 
 PartSys.prototype.initBouncy2D = function (count) {
