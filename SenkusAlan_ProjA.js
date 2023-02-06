@@ -704,7 +704,7 @@ PartSys.prototype.initBouncy3D = function (count) {
 										
   //--------------------------init Particle System Controls:
   this.runMode =  3;// Master Control: 0=reset; 1= pause; 2=step; 3=run
-  this.solvType = SOLV_OLDGOOD;// adjust by s/S keys.
+  this.solvType = SOLV_EULER;// adjust by s/S keys.
                     // SOLV_EULER (explicit, forward-time, as 
 										// found in BouncyBall03.01BAD and BouncyBall04.01badMKS)
 										// SOLV_OLDGOOD for special-case implicit solver, reverse-time, 
@@ -1022,10 +1022,14 @@ PartSys.prototype.solver = function () {
 // such as s1dot, sM, sMdot, etc.) by the numerical integration method chosen
 // by PartSys.solvType.
 
+this.applyForces(this.s2);
+
 switch(this.solvType)
 {
   case SOLV_EULER://--------------------------------------------------------
   // EXPLICIT or 'forward time' solver; Euler Method: s2 = s1 + h*s1dot
+  this.dotFinder(this.s2, this.s1dot);
+  
   for(var n = 0; n < this.s1.length; n++) { // for all elements in s1,s2,s1dot;
     this.s2[n] = this.s1[n] + this.s1dot[n] * (g_timeStep * 0.001); 
     }
@@ -1055,13 +1059,14 @@ case SOLV_OLDGOOD://------------------------------------------------------------
   //                  -= (9.832 meters/sec^2) * (g_timeStep/1000.0);
   var j = 0;  // i==particle number; j==array index for i-th particle
   for(var i = 0; i < this.partCount; i += 1, j+= PART_MAXVAR) {
-    this.s2[j + PART_ZVEL] -= this.grav*(g_timeStep*0.001);
+    // this.s2[j + PART_ZVEL] -= this.grav*(g_timeStep*0.001);
     // // -- apply drag: attenuate current velocity:
-    this.s2[j + PART_XVEL] *= this.drag;
-    this.s2[j + PART_YVEL] *= this.drag;
-    this.s2[j + PART_ZVEL] *= this.drag;
+    // this.s2[j + PART_XVEL] *= this.drag;
+    // this.s2[j + PART_YVEL] *= this.drag;
+    // this.s2[j + PART_ZVEL] *= this.drag;
     // -- move our particle using current velocity:
     // CAREFUL! must convert g_timeStep from milliseconds to seconds!
+
 
     // this.applyForces(j);
 
