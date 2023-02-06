@@ -609,6 +609,9 @@ PartSys.prototype.adjust = function () {
   gl.uniformMatrix4fv(this.u_ModelMatLoc, false, this.ModelMat.elements);
   gl.uniformMatrix4fv(this.u_ViewMatLoc, false, this.ViewMat.elements);
   gl.uniformMatrix4fv(this.u_ProjMatLoc, false, this.ProjMat.elements);
+
+  // reverse depth buffer
+  gl.depthFunc(gl.GREATER);
 }
 
 PartSys.prototype.roundRand = function() {
@@ -1200,11 +1203,11 @@ if(this.bounceType==0) { //------------------------------------------------
       // bounce on ceiling (+Y)
        this.s2[j + PART_YVEL] = -this.resti * this.s2[j + PART_YVEL];
     } //---------------------------
-    if(      this.s2[j + PART_ZPOS] < -0.9 && this.s2[j + PART_ZVEL] < 0.0) {
+    if(      this.s2[j + PART_ZPOS] < 0 && this.s2[j + PART_ZVEL] < 0.0) {
       // bounce on near wall (-Z)
        this.s2[j + PART_ZVEL] = -this.resti * this.s2[j + PART_ZVEL];
     }
-    else if( this.s2[j + PART_ZPOS] >  0.9 && this.s2[j + PART_ZVEL] > 0.0) {		
+    else if( this.s2[j + PART_ZPOS] > 1.8 && this.s2[j + PART_ZVEL] > 0.0) {		
       // bounce on far wall (+Z)
        this.s2[j + PART_ZVEL] = -this.resti * this.s2[j + PART_ZVEL];
       }	
@@ -1225,8 +1228,8 @@ if(this.bounceType==0) { //------------------------------------------------
     else if( this.s2[j + PART_YPOS] >  0.9) this.s2[j + PART_YPOS] =  0.9; // ceiling
     if(      this.s2[j + PART_XPOS] < -0.9) this.s2[j + PART_XPOS] = -0.9; // left wall
     else if( this.s2[j + PART_XPOS] >  0.9) this.s2[j + PART_XPOS] =  0.9; // right wall
-    if(      this.s2[j + PART_ZPOS] < -0.9) this.s2[j + PART_ZPOS] = -0.9; // near wall
-    else if( this.s2[j + PART_ZPOS] >  0.9) this.s2[j + PART_ZPOS] =  0.9; // far wall
+    if(      this.s2[j + PART_ZPOS] < 0) this.s2[j + PART_ZPOS] = 0; // near wall
+    else if( this.s2[j + PART_ZPOS] >  1.8) this.s2[j + PART_ZPOS] =  1.8; // far wall
   // Our simple 'bouncy-ball' particle system needs this position-limiting
   // constraint ONLY for the floor and not the walls, as no forces exist that
   // could 'push' a zero-velocity particle against the wall. But suppose we
@@ -1301,9 +1304,9 @@ else if (this.bounceType==1) {
           this.s2[j + PART_YVEL] =  this.resti * this.s2[j + PART_YVEL];	// sign changed-- don't need another.
     }
     //--------  near (-Z) wall  --------------------------------------------- 
-    if( this.s2[j + PART_ZPOS] < -0.9 ) { // && this.s2[j + PART_ZVEL] < 0.0 ) {
+    if( this.s2[j + PART_ZPOS] < 0 ) { // && this.s2[j + PART_ZVEL] < 0.0 ) {
     // collision! 
-      this.s2[j + PART_ZPOS] = -0.9;// 1) resolve contact: put particle at wall.
+      this.s2[j + PART_ZPOS] = 0;// 1) resolve contact: put particle at wall.
       this.s2[j + PART_ZVEL] = this.s1[j + PART_ZVEL];  // 2a) undo velocity change:
       this.s2[j + PART_ZVEL] *= this.drag;			        // 2b) apply drag:
       // 3) BOUNCE:  reversed velocity*coeff-of-restitution.
@@ -1316,9 +1319,9 @@ else if (this.bounceType==1) {
           this.s2[j + PART_ZVEL] =  this.resti * this.s2[j + PART_ZVEL];	// sign changed-- don't need another.
     }
     //--------  far (+Z) wall  ---------------------------------------------- 
-    else if( this.s2[j + PART_ZPOS] >  0.9) { // && this.s2[j + PART_ZVEL] > 0.0) {	
+    else if( this.s2[j + PART_ZPOS] >  1.8) { // && this.s2[j + PART_ZVEL] > 0.0) {	
     // collision! 
-      this.s2[j + PART_ZPOS] = 0.9; // 1) resolve contact: put particle at wall.
+      this.s2[j + PART_ZPOS] = 1.8; // 1) resolve contact: put particle at wall.
       this.s2[j + PART_ZVEL] = this.s1[j + PART_ZVEL];  // 2a) undo velocity change:
       this.s2[j + PART_ZVEL] *= this.drag;			        // 2b) apply drag:
       // 3) BOUNCE:  reversed velocity*coeff-of-restitution.
