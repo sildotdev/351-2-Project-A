@@ -870,9 +870,9 @@ PartSys.prototype.applyForces = function (s, fSet) {
     s[j + PART_Z_FTOT] = 0.0;
   }
   // then find and accumulate all forces applied to particles in state s:
-  for(var k = 0; k < fList.length; k++) {  // for every CForcer in fList array,
-//    console.log("fList[k].forceType:", fList[k].forceType);
-    if(fList[k].forceType <=0) {     //.................Invalid force? SKIP IT!
+  for(var k = 0; k < this.forceList.length; k++) {  // for every CForcer in this.forceList array,
+//    console.log("this.forceList[k].forceType:", this.forceList[k].forceType);
+    if(this.forceList[k].forceType <=0) {     //.................Invalid force? SKIP IT!
                         // if forceType is F_NONE, or if forceType was 
       continue;         // negated to (temporarily) disable the CForcer,
       }               
@@ -881,82 +881,82 @@ PartSys.prototype.applyForces = function (s, fSet) {
     // Most, but not all CForcer objects apply a force to many particles, and
     // the CForcer members 'targFirst' and 'targCount' tell us which ones:
     // *IF* targCount == 0, the CForcer applies ONLY to particle numbers e1,e2
-    //          (e.g. the e1 particle begins at s[fList[k].e1 * PART_MAXVAR])
+    //          (e.g. the e1 particle begins at s[this.forceList[k].e1 * PART_MAXVAR])
     // *IF* targCount < 0, apply the CForcer to 'targFirst' and all the rest
     //      of the particles that follow it in the state variable s.
     // *IF* targCount > 0, apply the CForcer to exactly 'targCount' particles,
     //      starting with particle number 'targFirst'
     // Begin by presuming targCount < 0;
-    var m = fList[k].targFirst;   // first affected particle # in our state 's'
+    var m = this.forceList[k].targFirst;   // first affected particle # in our state 's'
     var mmax = this.partCount;    // Total number of particles in 's'
                                   // (last particle number we access is mmax-1)
-    if(fList[k].targCount==0){    // ! Apply force to e1,e2 particles only!
+    if(this.forceList[k].targCount==0){    // ! Apply force to e1,e2 particles only!
       m=mmax=0;   // don't let loop run; apply force to e1,e2 particles only.
       }
-    else if(fList[k].targCount > 0) {   // ?did CForcer say HOW MANY particles?
+    else if(this.forceList[k].targCount > 0) {   // ?did CForcer say HOW MANY particles?
       // YES! force applies to 'targCount' particles starting with particle # m:
-      var tmp = fList[k].targCount;
+      var tmp = this.forceList[k].targCount;
       if(tmp < mmax) mmax = tmp;    // (but MAKE SURE mmax doesn't get larger)
       else console.log("\n\n!!PartSys.applyForces() index error!!\n\n");
       }
       //console.log("m:",m,"mmax:",mmax);
       // m and mmax are now correctly initialized; use them!  
     //......................................Apply force specified by forceType 
-    switch(fList[k].forceType) {    // what kind of force should we apply?
+    switch(this.forceList[k].forceType) {    // what kind of force should we apply?
       case F_MOUSE:     // Spring-like connection to mouse cursor
-        console.log("PartSys.applyForces(), fList[",k,"].forceType:", 
-                                  fList[k].forceType, "NOT YET IMPLEMENTED!!");
+        console.log("PartSys.applyForces(), this.forceList[",k,"].forceType:", 
+                                  this.forceList[k].forceType, "NOT YET IMPLEMENTED!!");
         break;
       case F_GRAV_E:    // Earth-gravity pulls 'downwards' as defined by downDir
         var j = m*PART_MAXVAR;  // state var array index for particle # m
         for(; m<mmax; m++, j+=PART_MAXVAR) { // for every part# from m to mmax-1,
                       // force from gravity == mass * gravConst * downDirection
-          s[j + PART_X_FTOT] += s[j + PART_MASS] * fList[k].gravConst * 
-                                                   fList[k].downDir.elements[0];
-          s[j + PART_Y_FTOT] += s[j + PART_MASS] * fList[k].gravConst * 
-                                                   fList[k].downDir.elements[1];
-          s[j + PART_Z_FTOT] += s[j + PART_MASS] * fList[k].gravConst * 
-                                                   fList[k].downDir.elements[2];
+          s[j + PART_X_FTOT] += s[j + PART_MASS] * this.forceList[k].gravConst * 
+                                                   this.forceList[k].downDir.elements[0];
+          s[j + PART_Y_FTOT] += s[j + PART_MASS] * this.forceList[k].gravConst * 
+                                                   this.forceList[k].downDir.elements[1];
+          s[j + PART_Z_FTOT] += s[j + PART_MASS] * this.forceList[k].gravConst * 
+                                                   this.forceList[k].downDir.elements[2];
           }
         break;
       case F_GRAV_P:    // planetary gravity between particle # e1 and e2.
-        console.log("PartSys.applyForces(), fList[",k,"].forceType:", 
-                                  fList[k].forceType, "NOT YET IMPLEMENTED!!");
+        console.log("PartSys.applyForces(), this.forceList[",k,"].forceType:", 
+                                  this.forceList[k].forceType, "NOT YET IMPLEMENTED!!");
        break;
       case F_WIND:      // Blowing-wind-like force-field; fcn of 3D position
-        console.log("PartSys.applyForces(), fList[",k,"].forceType:", 
-                                  fList[k].forceType, "NOT YET IMPLEMENTED!!");
+        console.log("PartSys.applyForces(), this.forceList[",k,"].forceType:", 
+                                  this.forceList[k].forceType, "NOT YET IMPLEMENTED!!");
         break;
       case F_BUBBLE:    // Constant inward force (bub_force)to a 3D centerpoint 
                         // bub_ctr if particle is > bub_radius away from it.
-        console.log("PartSys.applyForces(), fList[",k,"].forceType:", 
-                                  fList[k].forceType, "NOT YET IMPLEMENTED!!");
+        console.log("PartSys.applyForces(), this.forceList[",k,"].forceType:", 
+                                  this.forceList[k].forceType, "NOT YET IMPLEMENTED!!");
        break;
       case F_DRAG:      // viscous drag: force = -K_drag * velocity.
         var j = m*PART_MAXVAR;  // state var array index for particle # m
         for(; m<mmax; m++, j+=PART_MAXVAR) { // for every particle# from m to mmax-1,
                       // force from gravity == mass * gravConst * downDirection
-          s[j + PART_X_FTOT] -= fList[k].K_drag * s[j + PART_XVEL]; 
-          s[j + PART_Y_FTOT] -= fList[k].K_drag * s[j + PART_YVEL];
-          s[j + PART_Z_FTOT] -= fList[k].K_drag * s[j + PART_ZVEL];
+          s[j + PART_X_FTOT] -= this.forceList[k].K_drag * s[j + PART_XVEL]; 
+          s[j + PART_Y_FTOT] -= this.forceList[k].K_drag * s[j + PART_YVEL];
+          s[j + PART_Z_FTOT] -= this.forceList[k].K_drag * s[j + PART_ZVEL];
           }
         break;
       case F_SPRING:
-        console.log("PartSys.applyForces(), fList[",k,"].forceType:", 
-                                  fList[k].forceType, "NOT YET IMPLEMENTED!!");
+        console.log("PartSys.applyForces(), this.forceList[",k,"].forceType:", 
+                                  this.forceList[k].forceType, "NOT YET IMPLEMENTED!!");
         break;
       case F_SPRINGSET:
-        console.log("PartSys.applyForces(), fList[",k,"].forceType:", 
-                                  fList[k].forceType, "NOT YET IMPLEMENTED!!");
+        console.log("PartSys.applyForces(), this.forceList[",k,"].forceType:", 
+                                  this.forceList[k].forceType, "NOT YET IMPLEMENTED!!");
         break;
       case F_CHARGE:
-        console.log("PartSys.applyForces(), fList[",k,"].forceType:", 
-                                  fList[k].forceType, "NOT YET IMPLEMENTED!!");
+        console.log("PartSys.applyForces(), this.forceList[",k,"].forceType:", 
+                                  this.forceList[k].forceType, "NOT YET IMPLEMENTED!!");
         break;
       default:
-        console.log("!!!ApplyForces() fList[",k,"] invalid forceType:", fList[k].forceType);
+        console.log("!!!ApplyForces() this.forceList[",k,"] invalid forceType:", this.forceList[k].forceType);
         break;
-    } // switch(fList[k].forceType)
+    } // switch(this.forceList[k].forceType)
   } // for(k=0...)
 };
 
@@ -1056,12 +1056,15 @@ case SOLV_OLDGOOD://------------------------------------------------------------
   var j = 0;  // i==particle number; j==array index for i-th particle
   for(var i = 0; i < this.partCount; i += 1, j+= PART_MAXVAR) {
     this.s2[j + PART_ZVEL] -= this.grav*(g_timeStep*0.001);
-    // -- apply drag: attenuate current velocity:
+    // // -- apply drag: attenuate current velocity:
     this.s2[j + PART_XVEL] *= this.drag;
     this.s2[j + PART_YVEL] *= this.drag;
     this.s2[j + PART_ZVEL] *= this.drag;
     // -- move our particle using current velocity:
     // CAREFUL! must convert g_timeStep from milliseconds to seconds!
+
+    // this.applyForces(j);
+
     this.s2[j + PART_XPOS] += this.s2[j + PART_XVEL] * (g_timeStep * 0.001);
     this.s2[j + PART_YPOS] += this.s2[j + PART_YVEL] * (g_timeStep * 0.001); 
     this.s2[j + PART_ZPOS] += this.s2[j + PART_ZVEL] * (g_timeStep * 0.001); 
@@ -1126,7 +1129,7 @@ PartSys.prototype.doConstraints = function () {
     // Most, but not all CLimit objects apply constraint to many particles, and
     // the CLimit members 'targFirst' and 'targCount' tell us which ones:
     // *IF* targCount == 0, the CLimit applies ONLY to particle numbers e1,e2
-    //          (e.g. the e1 particle begins at sNow[fList[k].e1 * PART_MAXVAR])
+    //          (e.g. the e1 particle begins at sNow[this.forceList[k].e1 * PART_MAXVAR])
     // *IF* targCount < 0, apply the CLimit to 'targFirst' and all the rest
     //      of the particles that follow it in the state variables sNow, sNext.
     // *IF* targCount > 0, apply the CForcer to exactly 'targCount' particles,
@@ -1155,12 +1158,12 @@ PartSys.prototype.doConstraints = function () {
         var j = m*PART_MAXVAR;  // state var array index for particle # m
 
 //        for(; m<mmax; m++, j+=PART_MAXVAR) { // for every part# from m to mmax-1,
-//          sNext[j + PART_X_FTOT] += s[j + PART_MASS] * fList[k].gravConst * 
-//                                                   fList[k].downDir.elements[0];
-//          sNext[j + PART_Y_FTOT] += s[j + PART_MASS] * fList[k].gravConst * 
-//                                                   fList[k].downDir.elements[1];
-//          sNext[j + PART_Z_FTOT] += s[j + PART_MASS] * fList[k].gravConst * 
-//                                                   fList[k].downDir.elements[2];
+//          sNext[j + PART_X_FTOT] += s[j + PART_MASS] * this.forceList[k].gravConst * 
+//                                                   this.forceList[k].downDir.elements[0];
+//          sNext[j + PART_Y_FTOT] += s[j + PART_MASS] * this.forceList[k].gravConst * 
+//                                                   this.forceList[k].downDir.elements[1];
+//          sNext[j + PART_Z_FTOT] += s[j + PART_MASS] * this.forceList[k].gravConst * 
+//                                                   this.forceList[k].downDir.elements[2];
 //          }
         break;
       case LIM_WALL:    // 2-sided wall: rectangular, axis-aligned, flat/2D,
