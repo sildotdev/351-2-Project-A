@@ -984,7 +984,7 @@ PartSys.prototype.init = function () {
 
   gl.program = this.shaderLoc; // (to match cuon-utils.js -- initShaders())
 
-  this.initBouncy3D(300);
+  // this.initBouncy3D(300);
 };
 
 PartSys.prototype.switchToMe = function () {
@@ -1013,8 +1013,7 @@ PartSys.prototype.adjust = function () {
   gl.uniformMatrix4fv(this.u_ViewMatLoc, false, this.ViewMat.elements);
   gl.uniformMatrix4fv(this.u_ProjMatLoc, false, this.ProjMat.elements);
 
-  // reverse depth buffer
-  gl.depthFunc(gl.GREATER);
+  // reverse depth buffer;
 };
 
 PartSys.prototype.roundRand = function () {
