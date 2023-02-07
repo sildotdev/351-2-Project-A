@@ -544,11 +544,6 @@ function PartSys() {
   // console.log(this.forceList[0]); prints hello.
   this.limitList = []; // (empty) array to hold CLimit objects
   // for use by doContstraints()
-  this.boxConstraint = [
-    [-2.0, 2.0],
-    [-2.0, 2.0],
-    [0.0, 4.0],
-  ];
 
   this.ModelMat = new Matrix4(); // Transforms CVV axes to model axes.
   this.u_ModelMatLoc; // GPU location for u_ModelMat uniform
@@ -1261,10 +1256,10 @@ PartSys.prototype.doConstraints = function () {
 
         for(; m<mmax; m++, j+=PART_MAXVAR) { // for every part# from m to mmax-1,
           //--------  left (-X) wall  ----------
-          if (this.s2[j + PART_XPOS] < this.boxConstraint[0][0]) {
+          if (this.s2[j + PART_XPOS] < this.limitList[k].xMin) {
             // && this.s2[j + PART_XVEL] < 0.0 ) {
             // collision!
-            this.s2[j + PART_XPOS] = this.boxConstraint[0][0]; // 1) resolve contact: put particle at wall.
+            this.s2[j + PART_XPOS] = this.limitList[k].xMin; // 1) resolve contact: put particle at wall.
             this.s2[j + PART_XVEL] = this.s1[j + PART_XVEL]; // 2a) undo velocity change:
             this.s2[j + PART_XVEL] *= this.drag; // 2b) apply drag:
             // 3) BOUNCE:  reversed velocity*coeff-of-restitution.
@@ -1277,10 +1272,10 @@ PartSys.prototype.doConstraints = function () {
             else this.s2[j + PART_XVEL] = this.resti * this.s2[j + PART_XVEL]; // sign changed-- don't need another.
           }
           //--------  right (+X) wall  --------------------------------------------
-          else if (this.s2[j + PART_XPOS] > this.boxConstraint[0][1]) {
+          else if (this.s2[j + PART_XPOS] > this.limitList[k].xMax) {
             // && this.s2[j + PART_XVEL] > 0.0) {
             // collision!
-            this.s2[j + PART_XPOS] = this.boxConstraint[0][1]; // 1) resolve contact: put particle at wall.
+            this.s2[j + PART_XPOS] = this.limitList[k].xMax; // 1) resolve contact: put particle at wall.
             this.s2[j + PART_XVEL] = this.s1[j + PART_XVEL]; // 2a) undo velocity change:
             this.s2[j + PART_XVEL] *= this.drag; // 2b) apply drag:
             // 3) BOUNCE:  reversed velocity*coeff-of-restitution.
@@ -1293,10 +1288,10 @@ PartSys.prototype.doConstraints = function () {
             else this.s2[j + PART_XVEL] = this.resti * this.s2[j + PART_XVEL]; // sign changed-- don't need another.
           }
           //--------  floor (-Y) wall  --------------------------------------------
-          if (this.s2[j + PART_YPOS] < this.boxConstraint[1][0]) {
+          if (this.s2[j + PART_YPOS] < this.limitList[k].yMin) {
             // && this.s2[j + PART_YVEL] < 0.0) {
             // collision! floor...
-            this.s2[j + PART_YPOS] = this.boxConstraint[1][0]; // 1) resolve contact: put particle at wall.
+            this.s2[j + PART_YPOS] = this.limitList[k].yMin; // 1) resolve contact: put particle at wall.
             this.s2[j + PART_YVEL] = this.s1[j + PART_YVEL]; // 2a) undo velocity change:
             this.s2[j + PART_YVEL] *= this.drag; // 2b) apply drag:
             // 3) BOUNCE:  reversed velocity*coeff-of-restitution.
@@ -1309,10 +1304,10 @@ PartSys.prototype.doConstraints = function () {
             else this.s2[j + PART_YVEL] = this.resti * this.s2[j + PART_YVEL]; // sign changed-- don't need another.
           }
           //--------  ceiling (+Y) wall  ------------------------------------------
-          else if (this.s2[j + PART_YPOS] > this.boxConstraint[1][1]) {
+          else if (this.s2[j + PART_YPOS] > this.limitList[k].yMax) {
             // && this.s2[j + PART_YVEL] > 0.0) {
             // collision! ceiling...
-            this.s2[j + PART_YPOS] = this.boxConstraint[1][1]; // 1) resolve contact: put particle at wall.
+            this.s2[j + PART_YPOS] = this.limitList[k].yMax; // 1) resolve contact: put particle at wall.
             this.s2[j + PART_YVEL] = this.s1[j + PART_YVEL]; // 2a) undo velocity change:
             this.s2[j + PART_YVEL] *= this.drag; // 2b) apply drag:
             // 3) BOUNCE:  reversed velocity*coeff-of-restitution.
@@ -1325,10 +1320,10 @@ PartSys.prototype.doConstraints = function () {
             else this.s2[j + PART_YVEL] = this.resti * this.s2[j + PART_YVEL]; // sign changed-- don't need another.
           }
           //--------  near (-Z) wall  ---------------------------------------------
-          if (this.s2[j + PART_ZPOS] < this.boxConstraint[2][0]) {
+          if (this.s2[j + PART_ZPOS] < this.limitList[k].zMin) {
             // && this.s2[j + PART_ZVEL] < 0.0 ) {
             // collision!
-            this.s2[j + PART_ZPOS] = 0; // 1) resolve contact: put particle at wall.
+            this.s2[j + PART_ZPOS] = this.limitList[k].zMin; // 1) resolve contact: put particle at wall.
             this.s2[j + PART_ZVEL] = this.s1[j + PART_ZVEL]; // 2a) undo velocity change:
             this.s2[j + PART_ZVEL] *= this.drag; // 2b) apply drag:
             // 3) BOUNCE:  reversed velocity*coeff-of-restitution.
@@ -1341,10 +1336,10 @@ PartSys.prototype.doConstraints = function () {
             else this.s2[j + PART_ZVEL] = this.resti * this.s2[j + PART_ZVEL]; // sign changed-- don't need another.
           }
           //--------  far (+Z) wall  ----------------------------------------------
-          else if (this.s2[j + PART_ZPOS] > this.boxConstraint[2][1]) {
+          else if (this.s2[j + PART_ZPOS] > this.limitList[k].zMax) {
             // && this.s2[j + PART_ZVEL] > 0.0) {
             // collision!
-            this.s2[j + PART_ZPOS] = this.boxConstraint[2][1]; // 1) resolve contact: put particle at wall.
+            this.s2[j + PART_ZPOS] = this.limitList[k].zMax; // 1) resolve contact: put particle at wall.
             this.s2[j + PART_ZVEL] = this.s1[j + PART_ZVEL]; // 2a) undo velocity change:
             this.s2[j + PART_ZVEL] *= this.drag; // 2b) apply drag:
             // 3) BOUNCE:  reversed velocity*coeff-of-restitution.
@@ -1365,7 +1360,7 @@ PartSys.prototype.doConstraints = function () {
                         // zero thickness, any desired size & position
         break;
       case LIM_BOX:
-        break;
+        
       case LIM_MAT_WALL:
         break;
       case LIM_MAT_DISC:
@@ -1388,39 +1383,39 @@ PartSys.prototype.doConstraints = function () {
     for (var i = 0; i < this.partCount; i += 1, j += PART_MAXVAR) {
       // simple velocity-reversal:
       if (
-        this.s2[j + PART_XPOS] < this.boxConstraint[0][0] &&
+        this.s2[j + PART_XPOS] < this.limitList[k][0][0] &&
         this.s2[j + PART_XVEL] < 0.0
       ) {
         // bounce on left (-X) wall
         this.s2[j + PART_XVEL] = -this.resti * this.s2[j + PART_XVEL];
       } else if (
-        this.s2[j + PART_XPOS] > this.boxConstraint[0][1] &&
+        this.s2[j + PART_XPOS] > this.limitList[k][0][1] &&
         this.s2[j + PART_XVEL] > 0.0
       ) {
         // bounce on right (+X) wall
         this.s2[j + PART_XVEL] = -this.resti * this.s2[j + PART_XVEL];
       } //---------------------------
       if (
-        this.s2[j + PART_YPOS] < this.boxConstraint[1][0] &&
+        this.s2[j + PART_YPOS] < this.limitList[k][1][0] &&
         this.s2[j + PART_YVEL] < 0.0
       ) {
         // bounce on floor (-Y)
         this.s2[j + PART_YVEL] = -this.resti * this.s2[j + PART_YVEL];
       } else if (
-        this.s2[j + PART_YPOS] > this.boxConstraint[1][1] &&
+        this.s2[j + PART_YPOS] > this.limitList[k][1][1] &&
         this.s2[j + PART_YVEL] > 0.0
       ) {
         // bounce on ceiling (+Y)
         this.s2[j + PART_YVEL] = -this.resti * this.s2[j + PART_YVEL];
       } //---------------------------
       if (
-        this.s2[j + PART_ZPOS] < this.boxConstraint[2][0] &&
+        this.s2[j + PART_ZPOS] < this.limitList[k][2][0] &&
         this.s2[j + PART_ZVEL] < 0.0
       ) {
         // bounce on near wall (-Z)s
         this.s2[j + PART_ZVEL] = -this.resti * this.s2[j + PART_ZVEL];
       } else if (
-        this.s2[j + PART_ZPOS] > this.boxConstraint[2][1] &&
+        this.s2[j + PART_ZPOS] > this.limitList[k][2][1] &&
         this.s2[j + PART_ZVEL] > 0.0
       ) {
         // bounce on far wall (+Z)
@@ -1439,18 +1434,18 @@ PartSys.prototype.doConstraints = function () {
       // velocity, but with the ball even further below the floor. As this cycle
       // repeats, the ball slowly sinks further and further downwards.
       // THUS the floor needs this position-enforcing constraint as well:
-      if (this.s2[j + PART_YPOS] < this.boxConstraint[1][0])
-        this.s2[j + PART_YPOS] = this.boxConstraint[1][0];
-      else if (this.s2[j + PART_YPOS] > this.boxConstraint[1][1])
-        this.s2[j + PART_YPOS] = this.boxConstraint[1][1];
-      if (this.s2[j + PART_XPOS] < this.boxConstraint[0][0])
-        this.s2[j + PART_XPOS] = this.boxConstraint[0][0];
-      else if (this.s2[j + PART_XPOS] > this.boxConstraint[0][1])
-        this.s2[j + PART_XPOS] = this.boxConstraint[0][1];
-      if (this.s2[j + PART_ZPOS] < this.boxConstraint[2][0])
-        this.s2[j + PART_ZPOS] = this.boxConstraint[2][0];
-      else if (this.s2[j + PART_ZPOS] > this.boxConstraint[2][1])
-        this.s2[j + PART_ZPOS] = this.boxConstraint[2][1];
+      if (this.s2[j + PART_YPOS] < this.limitList[k][1][0])
+        this.s2[j + PART_YPOS] = this.limitList[k][1][0];
+      else if (this.s2[j + PART_YPOS] > this.limitList[k][1][1])
+        this.s2[j + PART_YPOS] = this.limitList[k][1][1];
+      if (this.s2[j + PART_XPOS] < this.limitList[k][0][0])
+        this.s2[j + PART_XPOS] = this.limitList[k][0][0];
+      else if (this.s2[j + PART_XPOS] > this.limitList[k][0][1])
+        this.s2[j + PART_XPOS] = this.limitList[k][0][1];
+      if (this.s2[j + PART_ZPOS] < this.limitList[k][2][0])
+        this.s2[j + PART_ZPOS] = this.limitList[k][2][0];
+      else if (this.s2[j + PART_ZPOS] > this.limitList[k][2][1])
+        this.s2[j + PART_ZPOS] = this.limitList[k][2][1];
       // Our simple 'bouncy-ball' particle system needs this position-limiting
       // constraint ONLY for the floor and not the walls, as no forces exist that
       // could 'push' a zero-velocity particle against the wall. But suppose we
@@ -1465,10 +1460,10 @@ PartSys.prototype.doConstraints = function () {
     var j = 0; // i==particle number; j==array index for i-th particle
     for (var i = 0; i < this.partCount; i += 1, j += PART_MAXVAR) {
       //--------  left (-X) wall  ----------
-      if (this.s2[j + PART_XPOS] < this.boxConstraint[0][0]) {
+      if (this.s2[j + PART_XPOS] < this.limitList[k][0][0]) {
         // && this.s2[j + PART_XVEL] < 0.0 ) {
         // collision!
-        this.s2[j + PART_XPOS] = this.boxConstraint[0][0]; // 1) resolve contact: put particle at wall.
+        this.s2[j + PART_XPOS] = this.limitList[k][0][0]; // 1) resolve contact: put particle at wall.
         this.s2[j + PART_XVEL] = this.s1[j + PART_XVEL]; // 2a) undo velocity change:
         this.s2[j + PART_XVEL] *= this.drag; // 2b) apply drag:
         // 3) BOUNCE:  reversed velocity*coeff-of-restitution.
@@ -1481,10 +1476,10 @@ PartSys.prototype.doConstraints = function () {
         else this.s2[j + PART_XVEL] = this.resti * this.s2[j + PART_XVEL]; // sign changed-- don't need another.
       }
       //--------  right (+X) wall  --------------------------------------------
-      else if (this.s2[j + PART_XPOS] > this.boxConstraint[0][1]) {
+      else if (this.s2[j + PART_XPOS] > this.limitList[k][0][1]) {
         // && this.s2[j + PART_XVEL] > 0.0) {
         // collision!
-        this.s2[j + PART_XPOS] = this.boxConstraint[0][1]; // 1) resolve contact: put particle at wall.
+        this.s2[j + PART_XPOS] = this.limitList[k][0][1]; // 1) resolve contact: put particle at wall.
         this.s2[j + PART_XVEL] = this.s1[j + PART_XVEL]; // 2a) undo velocity change:
         this.s2[j + PART_XVEL] *= this.drag; // 2b) apply drag:
         // 3) BOUNCE:  reversed velocity*coeff-of-restitution.
@@ -1497,10 +1492,10 @@ PartSys.prototype.doConstraints = function () {
         else this.s2[j + PART_XVEL] = this.resti * this.s2[j + PART_XVEL]; // sign changed-- don't need another.
       }
       //--------  floor (-Y) wall  --------------------------------------------
-      if (this.s2[j + PART_YPOS] < this.boxConstraint[1][0]) {
+      if (this.s2[j + PART_YPOS] < this.limitList[k][1][0]) {
         // && this.s2[j + PART_YVEL] < 0.0) {
         // collision! floor...
-        this.s2[j + PART_YPOS] = this.boxConstraint[1][0]; // 1) resolve contact: put particle at wall.
+        this.s2[j + PART_YPOS] = this.limitList[k][1][0]; // 1) resolve contact: put particle at wall.
         this.s2[j + PART_YVEL] = this.s1[j + PART_YVEL]; // 2a) undo velocity change:
         this.s2[j + PART_YVEL] *= this.drag; // 2b) apply drag:
         // 3) BOUNCE:  reversed velocity*coeff-of-restitution.
@@ -1513,10 +1508,10 @@ PartSys.prototype.doConstraints = function () {
         else this.s2[j + PART_YVEL] = this.resti * this.s2[j + PART_YVEL]; // sign changed-- don't need another.
       }
       //--------  ceiling (+Y) wall  ------------------------------------------
-      else if (this.s2[j + PART_YPOS] > this.boxConstraint[1][1]) {
+      else if (this.s2[j + PART_YPOS] > this.limitList[k][1][1]) {
         // && this.s2[j + PART_YVEL] > 0.0) {
         // collision! ceiling...
-        this.s2[j + PART_YPOS] = this.boxConstraint[1][1]; // 1) resolve contact: put particle at wall.
+        this.s2[j + PART_YPOS] = this.limitList[k][1][1]; // 1) resolve contact: put particle at wall.
         this.s2[j + PART_YVEL] = this.s1[j + PART_YVEL]; // 2a) undo velocity change:
         this.s2[j + PART_YVEL] *= this.drag; // 2b) apply drag:
         // 3) BOUNCE:  reversed velocity*coeff-of-restitution.
@@ -1529,7 +1524,7 @@ PartSys.prototype.doConstraints = function () {
         else this.s2[j + PART_YVEL] = this.resti * this.s2[j + PART_YVEL]; // sign changed-- don't need another.
       }
       //--------  near (-Z) wall  ---------------------------------------------
-      if (this.s2[j + PART_ZPOS] < this.boxConstraint[2][0]) {
+      if (this.s2[j + PART_ZPOS] < this.limitList[k][2][0]) {
         // && this.s2[j + PART_ZVEL] < 0.0 ) {
         // collision!
         this.s2[j + PART_ZPOS] = 0; // 1) resolve contact: put particle at wall.
@@ -1545,10 +1540,10 @@ PartSys.prototype.doConstraints = function () {
         else this.s2[j + PART_ZVEL] = this.resti * this.s2[j + PART_ZVEL]; // sign changed-- don't need another.
       }
       //--------  far (+Z) wall  ----------------------------------------------
-      else if (this.s2[j + PART_ZPOS] > this.boxConstraint[2][1]) {
+      else if (this.s2[j + PART_ZPOS] > this.limitList[k][2][1]) {
         // && this.s2[j + PART_ZVEL] > 0.0) {
         // collision!
-        this.s2[j + PART_ZPOS] = this.boxConstraint[2][1]; // 1) resolve contact: put particle at wall.
+        this.s2[j + PART_ZPOS] = this.limitList[k][2][1]; // 1) resolve contact: put particle at wall.
         this.s2[j + PART_ZVEL] = this.s1[j + PART_ZVEL]; // 2a) undo velocity change:
         this.s2[j + PART_ZVEL] *= this.drag; // 2b) apply drag:
         // 3) BOUNCE:  reversed velocity*coeff-of-restitution.
