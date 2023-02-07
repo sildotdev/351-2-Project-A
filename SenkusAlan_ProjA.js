@@ -762,8 +762,8 @@ CollGrid.prototype.adjust = function () {
   // this.ModelMat.setPerspective(30, 1, 1, 100);
   this.ModelMat.setIdentity();
   this.ModelMat.set(g_worldMat);
-  this.ModelMat.translate(0, 0, 1.5);
-  this.ModelMat.scale(1, 1, 0.01);
+  this.ModelMat.scale(0.5, 0.5, 0.5);
+  this.ModelMat.translate(0, 0, 1);
   // this.ProjMat.setPerspective(30, g_vpAspect, 1, 100);
   // this.ViewMat.setLookAt(g_Camera.elements[0], g_Camera.elements[1], g_Camera.elements[2],
   //   g_Camera.elements[0] + g_CameraFront.elements[0], g_Camera.elements[1] + g_CameraFront.elements[1], g_Camera.elements[2] + g_CameraFront.elements[2],
@@ -787,6 +787,11 @@ CollGrid.prototype.draw = function () {
         ".draw() call you needed to call this.switchToMe()!!"
     );
   }
+
+  // clear color AND DEPTH buffer
+  // gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  // gl.depthFunc(gl.GREATER);
+
 
   // ----------------------------Draw the contents of the currently-bound VBO:
   gl.drawArrays(
@@ -1097,16 +1102,16 @@ PartSys.prototype.initBouncy3D = function (count) {
 
   var cTmp = new CLimit(); // creat constraint-causing object, and
   cTmp.hitType = HIT_BOUNCE_VEL; // set how particles 'bounce' from its surface,
-  cTmp.limitType = LIM_WALL; // confine particles inside axis-aligned
+  cTmp.limitType = LIM_BOX; // confine particles inside axis-aligned
   // rectangular volume that
   cTmp.targFirst = 0; // applies to ALL particles; starting at 0
   cTmp.partCount = -1; // through all the rest of them.
-  cTmp.xMin = -1.0;
-  cTmp.xMax = 1.0; // box extent:  +/- 1.0 box at origin
-  cTmp.yMin = -1.0;
-  cTmp.yMax = 1.0;
-  cTmp.zMin = 1.5;
-  cTmp.zMax = 1.5;
+  cTmp.xMin = -0.5;
+  cTmp.xMax = 0.5; // box extent:  +/- 1.0 box at origin
+  cTmp.yMin = -0.5;
+  cTmp.yMax = 0.5;
+  cTmp.zMin = 0.0;
+  cTmp.zMax = 1.0;
   cTmp.Kresti = 1.0; // bouncyness: coeff. of restitution.
   // (and IGNORE all other CLimit members...)
   this.limitList.push(cTmp); // append this 'box' constraint object to the
@@ -1621,10 +1626,12 @@ PartSys.prototype.solver = function () {
   return;
 };
 
-PartSys.prototype.doConstraints = function () {
+PartSys.prototype.doConstraints = function ( limitList ) {
   //==============================================================================
-  // apply all Climit constraint-causing objects in the this.limitList array to the
+  // apply all Climit constraint-causing objects in the limitList array to the
   // particles/movements between current state sNow and future state sNext.
+
+  limitList = limitList || this.limitList; // use default if limitList not given.
 
   // 'bounce' our ball off floor & walls at +/- 0.9,+/-0.9, +/-0.9
   // where this.bounceType selects constraint type:
@@ -1632,12 +1639,12 @@ PartSys.prototype.doConstraints = function () {
   // ==1 for textbook's collision resolution method, which uses an 'impulse'
   //          to cancel any velocity boost caused by falling below the floor.
   //
-  for(var k = 0; k < this.limitList.length; k++) {  // for every CLimit in this.limitList array,
-//    console.log("this.limitList[k].limitType:", this.limitList[k].limitType);
-    if(this.limitList[k].limitType <=0) {     //.................Invalid limit? SKIP IT!
+  for(var k = 0; k < limitList.length; k++) {  // for every CLimit in limitList array,
+//    console.log("limitList[k].limitType:", limitList[k].limitType);
+    if(limitList[k].limitType <=0) {     //.................Invalid limit? SKIP IT!
                         // if limitType is LIM_NONE or if limitType was
       continue;         // negated to (temporarily) disable the CLimit object,
-      }                 // skip this k-th object in the this.limitList[] array.
+      }                 // skip this k-th object in the limitList[] array.
     // ..................................Set up loop for all targeted particles
     // HOW THIS WORKS:
     // Most, but not all CLimit objects apply constraint to many particles, and
@@ -1649,34 +1656,34 @@ PartSys.prototype.doConstraints = function () {
     // *IF* targCount > 0, apply the CForcer to exactly 'targCount' particles,
     //      starting with particle number 'targFirst'
     // Begin by presuming targCount < 0;
-    var m = this.limitList[k].targFirst;    // first targed particle # in the state vars
+    var m = limitList[k].targFirst;    // first targed particle # in the state vars
     var mmax = this.partCount;    // total number of particles in the state vars
                                   // (last particle number we access is mmax-1)
-    if(this.limitList[k].targCount==0){    // ! Apply CLimit to e1,e2 particles only!
+    if(limitList[k].targCount==0){    // ! Apply CLimit to e1,e2 particles only!
       m=mmax=0;   // don't let loop run; apply CLimit to e1,e2 particles only.
       }
-    else if(this.limitList[k].targCount > 0) {   // ?did CLimit say HOW MANY particles?
+    else if(limitList[k].targCount > 0) {   // ?did CLimit say HOW MANY particles?
       // YES! limit applies to 'targCount' particles starting with particle # m:
-      var tmp = this.limitList[k].targCount;
+      var tmp = limitList[k].targCount;
       if(tmp < mmax) mmax = tmp; // (but MAKE SURE mmax doesn't get larger)
       else console.log("\n\n!!PartSys.doConstraints() index error!!\n\n");
       }
       //console.log("m:",m,"mmax:",mmax);
       // m and mmax are now correctly initialized; use them!  
     //......................................Apply limit specified by limitType 
-    switch(this.limitList[k].limitType) {    // what kind of limit should we apply?
+    switch(limitList[k].limitType) {    // what kind of limit should we apply?
       case LIM_VOL:     // The axis-aligned rectangular volume specified by
-                        // this.limitList[k].xMin,xMax,yMin,yMax,zMin,zMax keeps
+                        // limitList[k].xMin,xMax,yMin,yMax,zMin,zMax keeps
                         // particles INSIDE if xMin<xMax, yMin<yMax, zMin<zMax
                         //      and OUTSIDE if xMin>xMax, yMin>yMax, zMin>xMax.
         var j = m*PART_MAXVAR;  // state var array index for particle # m
 
         for(; m<mmax; m++, j+=PART_MAXVAR) { // for every part# from m to mmax-1,
           //--------  left (-X) wall  ----------
-          if (this.s2[j + PART_XPOS] < this.limitList[k].xMin) {
+          if (this.s2[j + PART_XPOS] < limitList[k].xMin) {
             // && this.s2[j + PART_XVEL] < 0.0 ) {
             // collision!
-            this.s2[j + PART_XPOS] = this.limitList[k].xMin; // 1) resolve contact: put particle at wall.
+            this.s2[j + PART_XPOS] = limitList[k].xMin; // 1) resolve contact: put particle at wall.
             this.s2[j + PART_XVEL] = this.s1[j + PART_XVEL]; // 2a) undo velocity change:
             this.s2[j + PART_XVEL] *= this.drag; // 2b) apply drag:
             // 3) BOUNCE:  reversed velocity*coeff-of-restitution.
@@ -1689,10 +1696,10 @@ PartSys.prototype.doConstraints = function () {
             else this.s2[j + PART_XVEL] = this.resti * this.s2[j + PART_XVEL]; // sign changed-- don't need another.
           }
           //--------  right (+X) wall  --------------------------------------------
-          else if (this.s2[j + PART_XPOS] > this.limitList[k].xMax) {
+          else if (this.s2[j + PART_XPOS] > limitList[k].xMax) {
             // && this.s2[j + PART_XVEL] > 0.0) {
             // collision!
-            this.s2[j + PART_XPOS] = this.limitList[k].xMax; // 1) resolve contact: put particle at wall.
+            this.s2[j + PART_XPOS] = limitList[k].xMax; // 1) resolve contact: put particle at wall.
             this.s2[j + PART_XVEL] = this.s1[j + PART_XVEL]; // 2a) undo velocity change:
             this.s2[j + PART_XVEL] *= this.drag; // 2b) apply drag:
             // 3) BOUNCE:  reversed velocity*coeff-of-restitution.
@@ -1705,10 +1712,10 @@ PartSys.prototype.doConstraints = function () {
             else this.s2[j + PART_XVEL] = this.resti * this.s2[j + PART_XVEL]; // sign changed-- don't need another.
           }
           //--------  floor (-Y) wall  --------------------------------------------
-          if (this.s2[j + PART_YPOS] < this.limitList[k].yMin) {
+          if (this.s2[j + PART_YPOS] < limitList[k].yMin) {
             // && this.s2[j + PART_YVEL] < 0.0) {
             // collision! floor...
-            this.s2[j + PART_YPOS] = this.limitList[k].yMin; // 1) resolve contact: put particle at wall.
+            this.s2[j + PART_YPOS] = limitList[k].yMin; // 1) resolve contact: put particle at wall.
             this.s2[j + PART_YVEL] = this.s1[j + PART_YVEL]; // 2a) undo velocity change:
             this.s2[j + PART_YVEL] *= this.drag; // 2b) apply drag:
             // 3) BOUNCE:  reversed velocity*coeff-of-restitution.
@@ -1721,10 +1728,10 @@ PartSys.prototype.doConstraints = function () {
             else this.s2[j + PART_YVEL] = this.resti * this.s2[j + PART_YVEL]; // sign changed-- don't need another.
           }
           //--------  ceiling (+Y) wall  ------------------------------------------
-          else if (this.s2[j + PART_YPOS] > this.limitList[k].yMax) {
+          else if (this.s2[j + PART_YPOS] > limitList[k].yMax) {
             // && this.s2[j + PART_YVEL] > 0.0) {
             // collision! ceiling...
-            this.s2[j + PART_YPOS] = this.limitList[k].yMax; // 1) resolve contact: put particle at wall.
+            this.s2[j + PART_YPOS] = limitList[k].yMax; // 1) resolve contact: put particle at wall.
             this.s2[j + PART_YVEL] = this.s1[j + PART_YVEL]; // 2a) undo velocity change:
             this.s2[j + PART_YVEL] *= this.drag; // 2b) apply drag:
             // 3) BOUNCE:  reversed velocity*coeff-of-restitution.
@@ -1737,10 +1744,10 @@ PartSys.prototype.doConstraints = function () {
             else this.s2[j + PART_YVEL] = this.resti * this.s2[j + PART_YVEL]; // sign changed-- don't need another.
           }
           //--------  near (-Z) wall  ---------------------------------------------
-          if (this.s2[j + PART_ZPOS] < this.limitList[k].zMin) {
+          if (this.s2[j + PART_ZPOS] < limitList[k].zMin) {
             // && this.s2[j + PART_ZVEL] < 0.0 ) {
             // collision!
-            this.s2[j + PART_ZPOS] = this.limitList[k].zMin; // 1) resolve contact: put particle at wall.
+            this.s2[j + PART_ZPOS] = limitList[k].zMin; // 1) resolve contact: put particle at wall.
             this.s2[j + PART_ZVEL] = this.s1[j + PART_ZVEL]; // 2a) undo velocity change:
             this.s2[j + PART_ZVEL] *= this.drag; // 2b) apply drag:
             // 3) BOUNCE:  reversed velocity*coeff-of-restitution.
@@ -1753,10 +1760,10 @@ PartSys.prototype.doConstraints = function () {
             else this.s2[j + PART_ZVEL] = this.resti * this.s2[j + PART_ZVEL]; // sign changed-- don't need another.
           }
           //--------  far (+Z) wall  ----------------------------------------------
-          else if (this.s2[j + PART_ZPOS] > this.limitList[k].zMax) {
+          else if (this.s2[j + PART_ZPOS] > limitList[k].zMax) {
             // && this.s2[j + PART_ZVEL] > 0.0) {
             // collision!
-            this.s2[j + PART_ZPOS] = this.limitList[k].zMax; // 1) resolve contact: put particle at wall.
+            this.s2[j + PART_ZPOS] = limitList[k].zMax; // 1) resolve contact: put particle at wall.
             this.s2[j + PART_ZVEL] = this.s1[j + PART_ZVEL]; // 2a) undo velocity change:
             this.s2[j + PART_ZVEL] *= this.drag; // 2b) apply drag:
             // 3) BOUNCE:  reversed velocity*coeff-of-restitution.
@@ -1774,24 +1781,37 @@ PartSys.prototype.doConstraints = function () {
         var j = m*PART_MAXVAR;  // state var array index for particle # m
         // Get wall orientation (which xMin,yMin,zMin is the same as their corresponding xMax,yMax,zMax)
         for(; m<mmax; m++, j+=PART_MAXVAR) { // for every part# from m to mmax-1,
-          var xMin = this.limitList[k].xMin;
-          var yMin = this.limitList[k].yMin;
-          var zMin = this.limitList[k].zMin;
+          var xMin = limitList[k].xMin;
+          var yMin = limitList[k].yMin;
+          var zMin = limitList[k].zMin;
 
-          var xMax = this.limitList[k].xMax;
-          var yMax = this.limitList[k].yMax;
-          var zMax = this.limitList[k].zMax;
+          var xMax = limitList[k].xMax;
+          var yMax = limitList[k].yMax;
+          var zMax = limitList[k].zMax;
 
           // Get wall normal (which xMin,yMin,zMin is the same as their corresponding xMax,yMax,zMax)
           var wallNormal = new Vector3([xMax - xMin ? 0 : 1, yMax - yMin ? 0 : 1, zMax - zMin ? 0 : 1]);
           var negWallNormal = new Vector3([xMax - xMin ? 0 : -1, yMax - yMin ? 0 : -1, zMax - zMin ? 0 : -1]);
 
-          wallNormal.normalize();
-          negWallNormal.normalize();
+          var wallNormalAxis = wallNormal.elements[0] == 1 ? "x" : wallNormal.elements[1] == 1 ? "y" : "z";
+
+
+          // wallNormal.normalize();
+          // negWallNormal.normalize();
 
           // Get wall width dimensions (@TODO: Ugly)
-          var wallWidthAxis = wallNormal.elements[0] ? "y" : wallNormal.elements[1] ? "z" : "x";
-          var wallLengthAxis = wallNormal.elements[0] ? "z" : wallNormal.elements[1] ? "x" : "y";
+          var wallLengthAxis
+          var wallWidthAxis
+          if (wallNormalAxis == "x") {
+            wallLengthAxis = "y";
+            wallWidthAxis = "z";
+          } else if (wallNormalAxis == "y") {
+            wallLengthAxis = "z";
+            wallWidthAxis = "x";
+          } else if (wallNormalAxis == "z") {
+            wallLengthAxis = "x";
+            wallWidthAxis = "y";
+          }
 
           // Get wall width and length vectors
           var wallWidth = new Vector3([
@@ -1799,7 +1819,7 @@ PartSys.prototype.doConstraints = function () {
             wallWidthAxis == "y" ? yMax - yMin : 0,
             wallWidthAxis == "z" ? zMax - zMin : 0
           ]);
-          wallWidthNormal = new Vector3([wallWidth.elements[1], wallWidth.elements[2], wallWidth.elements[0]]);
+          wallWidthNormal = new Vector3([wallWidth.elements[0], wallWidth.elements[1], wallWidth.elements[2]]);
           wallWidthNormal.normalize()
           wallWidthScalar = wallWidthAxis == "x" ? xMax - xMin : wallWidthAxis == "y" ? yMax - yMin : zMax - zMin;
           var wallLength = new Vector3([
@@ -1807,9 +1827,18 @@ PartSys.prototype.doConstraints = function () {
             wallLengthAxis == "y" ? yMax - yMin : 0,
             wallLengthAxis == "z" ? zMax - zMin : 0
           ]);
-          wallLengthNormal = new Vector3([wallLength.elements[1], wallLength.elements[2], wallLength.elements[0]]);
+          wallLengthNormal = new Vector3([wallLength.elements[0], wallLength.elements[1], wallLength.elements[2]]);
           wallLengthNormal.normalize()
           wallLengthScalar = wallLengthAxis == "x" ? xMax - xMin : wallLengthAxis == "y" ? yMax - yMin : zMax - zMin;
+
+          // limitList[k].printMe()
+          // console.log(wallNormal.elements);
+          // console.log("length")
+          // console.log(wallLengthAxis, wallLengthScalar);
+          // console.log(wallLengthNormal.elements);
+          // console.log("width")
+          // console.log(wallWidthAxis, wallWidthScalar);
+          // console.log(wallWidthNormal.elements);
 
           // Wall center
           var wallCenter = new Vector3([
@@ -1877,8 +1906,6 @@ PartSys.prototype.doConstraints = function () {
             if (worldToWallS1.elements[2] > 0 && worldToWallS2.elements[2] <= 0) {
               // particle moved down thru top
               if (VNDot < 0) {
-
-
                 this.s2[j + PART_XVEL] = VNew.elements[0]
                 this.s2[j + PART_YVEL] = VNew.elements[1]
                 this.s2[j + PART_ZVEL] = VNew.elements[2]
@@ -1904,6 +1931,82 @@ PartSys.prototype.doConstraints = function () {
                         // zero thickness, any desired size & position
         break;
       case LIM_BOX:
+        var boxWalls = []
+
+        // left wall
+        leftWall = new CLimit()
+        leftWall.limitType = LIM_WALL
+        leftWall.xMin = limitList[k].xMin
+        leftWall.xMax = limitList[k].xMin
+        leftWall.yMin = limitList[k].yMin
+        leftWall.yMax = limitList[k].yMax
+        leftWall.zMin = limitList[k].zMin
+        leftWall.zMax = limitList[k].zMax
+        boxWalls.push(leftWall)
+
+
+        // right wall
+        rightWall = new CLimit()
+        rightWall.limitType = LIM_WALL
+        rightWall.xMin = limitList[k].xMax
+        rightWall.xMax = limitList[k].xMax
+        rightWall.yMin = limitList[k].yMin
+        rightWall.yMax = limitList[k].yMax
+        rightWall.zMin = limitList[k].zMin
+        rightWall.zMax = limitList[k].zMax
+        boxWalls.push(rightWall)
+
+
+        // top wall
+        topWall = new CLimit()
+        topWall.limitType = LIM_WALL
+        topWall.xMin = limitList[k].xMin
+        topWall.xMax = limitList[k].xMax
+        topWall.yMin = limitList[k].yMax
+        topWall.yMax = limitList[k].yMax
+        topWall.zMin = limitList[k].zMin
+        topWall.zMax = limitList[k].zMax
+        boxWalls.push(topWall)
+
+
+        // bottom wall
+        bottomWall = new CLimit()
+        bottomWall.limitType = LIM_WALL
+        bottomWall.xMin = limitList[k].xMin
+        bottomWall.xMax = limitList[k].xMax
+        bottomWall.yMin = limitList[k].yMin
+        bottomWall.yMax = limitList[k].yMin
+        bottomWall.zMin = limitList[k].zMin
+        bottomWall.zMax = limitList[k].zMax
+        boxWalls.push(bottomWall)
+
+
+        // front wall
+        frontWall = new CLimit()
+        frontWall.limitType = LIM_WALL
+        frontWall.xMin = limitList[k].xMin
+        frontWall.xMax = limitList[k].xMax
+        frontWall.yMin = limitList[k].yMin
+        frontWall.yMax = limitList[k].yMax
+        frontWall.zMin = limitList[k].zMin
+        frontWall.zMax = limitList[k].zMin
+        boxWalls.push(frontWall)
+
+
+        // back wall
+        backWall = new CLimit()
+        backWall.limitType = LIM_WALL
+        backWall.xMin = limitList[k].xMin
+        backWall.xMax = limitList[k].xMax
+        backWall.yMin = limitList[k].yMin
+        backWall.yMax = limitList[k].yMax
+        backWall.zMin = limitList[k].zMax
+        backWall.zMax = limitList[k].zMax
+        backWall.targFirst = 0;
+        backWall.partCount = -1;
+        boxWalls.push(backWall)
+
+        this.doConstraints(boxWalls)
         break;
       case LIM_MAT_WALL:
         break;
@@ -1912,9 +2015,9 @@ PartSys.prototype.doConstraints = function () {
       case LIM_MAT_BOX:
         break;      
       default:
-        console.log("!!!doConstraints() this.limitList[",k,"] invalid limitType:", this.limitList[k].limitType);
+        console.log("!!!doConstraints() limitList[",k,"] invalid limitType:", limitList[k].limitType);
         break;
-    } // switch(this.limitList[k].limitType)
+    } // switch(limitList[k].limitType)
   } // for(k=0...)
 };
 
