@@ -2639,6 +2639,10 @@ PartSys.prototype.doFountain = function () {
     this.s2[j + PART_LIFELEFT] -= 0.25;
     this.s2[j + PART_MASS] += 0.1;
 
+    this.s2[j + PART_YVEL] *= 1.01;
+    this.s2[j + PART_XVEL] *= 1.01;
+    
+
     // console.log(this.s2[j + PART_LIFELEFT] / 10)
 
     if (this.s2[j + PART_LIFELEFT] <= 0) {
