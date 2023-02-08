@@ -1137,7 +1137,7 @@ PartSys.prototype.initBouncy3D = function (count) {
 
   //--------------------------init Particle System Controls:
   this.runMode = 3; // Master Control: 0=reset; 1= pause; 2=step; 3=run
-  this.solvType = SOLV_EULER; // adjust by s/S keys.
+  this.solvType = SOLV_OLDGOOD; // adjust by s/S keys.
   // SOLV_EULER (explicit, forward-time, as
   // found in BouncyBall03.01BAD and BouncyBall04.01badMKS)
   // SOLV_OLDGOOD for special-case implicit solver, reverse-time,
@@ -1320,8 +1320,8 @@ PartSys.prototype.initFlocking = function (count) {
   // (WARNING! until we do this, fTmp refers to
   // the same memory locations as forceList[0]!!!)
   fTmp.forceType = F_DRAG; // Viscous Drag
-  fTmp.K_drag = 0.10; // in Euler solver, scales velocity by 0.85
-  fTmp.targFirst = 0; s// apply it to ALL particles:
+  fTmp.K_drag = 0.60; // in Euler solver, scales velocity by 0.85
+  fTmp.targFirst = 0; // apply it to ALL particles:
   fTmp.partCount = -1; // (negative value means ALL particles)
   // (and IGNORE all other Cforcer members...)
   this.forceList.push(fTmp); // append this 'gravity' force object to
@@ -1371,7 +1371,7 @@ PartSys.prototype.initFlocking = function (count) {
   console.log("PartSys.initBouncy3D() created PartSys.limitList[] array of ");
   console.log("\t\t", this.limitList.length, "CLimit objects.");
 
-  this.INIT_VEL = 0.15 * 10.0; // initial velocity in meters/sec.
+  this.INIT_VEL = 0.15 * 30.0; // initial velocity in meters/sec.
   // adjust by ++Start, --Start buttons. Original value
   // was 0.15 meters per timestep; multiply by 60 to get
   // meters per second.
@@ -1416,9 +1416,9 @@ PartSys.prototype.initFlocking = function (count) {
     this.s1[j + PART_ZPOS] = 0.8 + 2 * this.randZ;
     this.s1[j + PART_WPOS] = 1.0; // position 'w' coordinate;
     this.roundRand(); // Now choose random initial velocities too:
-    this.s1[j + PART_XVEL] = this.INIT_VEL * (0.4 + 0.2 * this.randX);
-    this.s1[j + PART_YVEL] = this.INIT_VEL * (0.4 + 0.2 * this.randY);
-    this.s1[j + PART_ZVEL] = this.INIT_VEL * (0.4 + 0.2 * this.randZ);
+    this.s1[j + PART_XVEL] = this.INIT_VEL * (0.4 + 0.2 * 0);
+    this.s1[j + PART_YVEL] = this.INIT_VEL * (0.4 + 0.2 * 1);
+    this.s1[j + PART_ZVEL] = this.INIT_VEL * (0.4 + 0.2 * 1);
     this.s1[j + PART_MASS] = 1.0; // mass, in kg.
     this.s1[j + PART_DIAM] = 2.0 + 10 * Math.random(); // on-screen diameter, in pixels
     this.s1[j + PART_LIFELEFT] = 10 + 10 * Math.random(); // 10 to 20
@@ -1720,13 +1720,13 @@ PartSys.prototype.applyForces = function (s, fSet, min, max) {
           center.elements[1] += s[j + PART_YPOS];
           center.elements[2] += s[j + PART_ZPOS];
         }
-        center.elements[0] /= PART_MAXVAR;
-        center.elements[1] /= PART_MAXVAR;
-        center.elements[2] /= PART_MAXVAR;
+        center.elements[0] /= mmax;
+        center.elements[1] /= mmax;
+        center.elements[2] /= mmax;
         var fTmp = new CForcer();
         fTmp.forceType = F_BUBBLE;
-        fTmp.bub_force = 2;
-        fTmp.bub_radius = 0;
+        fTmp.bub_force = 5;
+        fTmp.bub_radius = 1;
         fTmp.bub_ctr = center;
 
         this.applyForces(s, [fTmp]);
@@ -1749,7 +1749,7 @@ PartSys.prototype.applyForces = function (s, fSet, min, max) {
                 Math.pow(s[j + PART_XPOS] - s[j2 + PART_XPOS], 2) +
                   Math.pow(s[j + PART_YPOS] - s[j2 + PART_YPOS], 2) +
                   Math.pow(s[j + PART_ZPOS] - s[j2 + PART_ZPOS], 2)
-              ) ** 2;
+              );
 
               // clamp distance to NU_EPSILON
               if (!distance || distance < NU_EPSILON) {
@@ -1758,10 +1758,10 @@ PartSys.prototype.applyForces = function (s, fSet, min, max) {
 
               // console.log(distance)
 
-              mult = 0.1;
+              mult = 1;
 
               // Constant force towards center
-              if (distance < 0.1) {
+              if (distance < 0.5) {
                 s[j + PART_X_FTOT] +=
                   (mult *
                     (s[j + PART_XPOS] - s[j2 + PART_XPOS])) /
@@ -1803,22 +1803,60 @@ PartSys.prototype.applyForces = function (s, fSet, min, max) {
               if (!distance || distance < NU_EPSILON) {
                 distance = NU_EPSILON;
               }
-              mult = 0.0001;
-
+              mult = 100 / mmax;
+  
               localDirection.elements[0] += mult * s[j2 + PART_XVEL] / distance;
               localDirection.elements[1] += mult * s[j2 + PART_YVEL] / distance;
               localDirection.elements[2] += mult * s[j2 + PART_ZVEL] / distance;
             }
-
-            s[j + PART_X_FTOT] += localDirection.elements[0];
-            s[j + PART_Y_FTOT] += localDirection.elements[1];
-            s[j + PART_Z_FTOT] += localDirection.elements[2];
           }   
+          s[j + PART_X_FTOT] += localDirection.elements[0] / mmax;
+          s[j + PART_Y_FTOT] += localDirection.elements[1] / mmax;
+          s[j + PART_Z_FTOT] += localDirection.elements[2] / mmax;
         }
         break;
       case F_BOIDS4:
         console.log( "Boids4" );
         // Evasion
+
+        // Hardcoded but whatever
+
+        // Counterclockwize in sphere radius 2
+        var center = new Vector3();
+        center.elements[0] = 0.5;
+        center.elements[1] = 0.5;
+        center.elements[2] = 0.5;
+
+        var j = m * PART_MAXVAR
+        for (; m < mmax; m++, j += PART_MAXVAR) {
+          var distance = Math.sqrt(
+            Math.pow(s[j + PART_XPOS] - center.elements[0], 2) +
+              Math.pow(s[j + PART_YPOS] - center.elements[1], 2) +
+              Math.pow(s[j + PART_ZPOS] - center.elements[2], 2)
+          );
+
+          // clamp distance to NU_EPSILON
+          if (!distance || distance < NU_EPSILON) {
+            distance = NU_EPSILON;
+          }
+
+          // distance = 1 / distance;
+
+          // console.log(distance)
+
+          mult = 0.5;
+
+          // Constant force towards center
+          if (distance < 0.25) {
+            s[j + PART_X_FTOT] +=
+              (mult *
+                (s[j + PART_XPOS] - center.elements[0])) /
+              distance;
+            s[j + PART_Y_FTOT] += (mult * (s[j + PART_YPOS] - center.elements[1])) / distance;
+            s[j + PART_Z_FTOT] += (mult * (s[j + PART_ZPOS] - center.elements[2])) / distance;
+          }
+        }
+        break;
       default:
         console.log(
           "!!!ApplyForces() fSet[",
