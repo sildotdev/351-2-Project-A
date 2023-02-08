@@ -1127,11 +1127,25 @@ PartSys.prototype.initBouncy3D = function (count) {
   // (and IGNORE all other CLimit members...)
   this.limitList.push(cTmp); // append this 'box' constraint object to the
   // 'limitList' array of constraint-causing objects.
+
+  var cTmp = new CLimit(); // creat constraint-causing object, and
+  cTmp.hitType = HIT_BOUNCE_VEL; // set how particles 'bounce' from its surface,
+  cTmp.limitType = LIM_SPHERE;
+  cTmp.radius = 4;
+  cTmp.xPos = 0;
+  cTmp.yPos = 0;
+  cTmp.zPos = 1;
+
+  cTmp.Kresti = 1.0; // bouncyness: coeff. of restitution
+  
+  this.limitList.push(cTmp); // append this 'box' constraint object to the
+
+
   // Report:
   console.log("PartSys.initBouncy3D() created PartSys.limitList[] array of ");
   console.log("\t\t", this.limitList.length, "CLimit objects.");
 
-  this.INIT_VEL = 0.15 * 60.0; // initial velocity in meters/sec.
+  this.INIT_VEL = 0.15 * 100.0; // initial velocity in meters/sec.
   // adjust by ++Start, --Start buttons. Original value
   // was 0.15 meters per timestep; multiply by 60 to get
   // meters per second.
@@ -1149,7 +1163,7 @@ PartSys.prototype.initBouncy3D = function (count) {
 
   //--------------------------init Particle System Controls:
   this.runMode = 3; // Master Control: 0=reset; 1= pause; 2=step; 3=run
-  this.solvType = SOLV_OLDGOOD; // adjust by s/S keys.
+  this.solvType = SOLV_MIDPOINT; // adjust by s/S keys.
   // SOLV_EULER (explicit, forward-time, as
   // found in BouncyBall03.01BAD and BouncyBall04.01badMKS)
   // SOLV_OLDGOOD for special-case implicit solver, reverse-time,
@@ -1159,6 +1173,7 @@ PartSys.prototype.initBouncy3D = function (count) {
   // ==1 for Chapter 3's collision resolution method, which
   // uses an 'impulse' to cancel any velocity boost caused
   // by falling below the floor.
+  this.circle = true;
 
   //--------------------------------Create & fill VBO with state var s1 contents:
   // INITIALIZE s1, s2:
@@ -1294,7 +1309,7 @@ PartSys.prototype.initFireReeves = function (count) {
   this.forceList.push(fTmp); // append this 'gravity' force object to
   // the forceList array of force-causing objects.
 
-  this.forceList.push(fTmp);
+  // this.forceList.push(fTmp);
 
   // Report:
   console.log("PartSys.initBouncy3D() created PartSys.forceList[] array of ");
@@ -1337,6 +1352,8 @@ PartSys.prototype.initFireReeves = function (count) {
   // (and IGNORE all other CLimit members...)
   this.limitList.push(cTmp); // append this 'box' constraint object to the
   // 'limitList' array of constraint-causing objects.
+  // this.limitList.push(cTmp); // append this 'box' constraint object to the
+
   // Report:
   console.log("PartSys.initBouncy3D() created PartSys.limitList[] array of ");
   console.log("\t\t", this.limitList.length, "CLimit objects.");
@@ -1391,9 +1408,26 @@ PartSys.prototype.initFireReeves = function (count) {
     this.s1[j + PART_ZVEL] = this.INIT_VEL * (0 + 0.2 * this.randZ);
     this.s1[j + PART_MASS] = 1.0; // mass, in kg.
     this.s1[j + PART_DIAM] = 2.0 + 10 * Math.random(); // on-screen diameter, in pixels
-    this.s1[j + PART_LIFELEFT] = 10 + 10 * Math.random(); // 10 to 20
+    // this.s1[j + PART_LIFELEFT] = 10 + 10 * Math.random(); // 10 to 20
     this.s1[j + PART_RENDMODE] = 0.0;
-    this.s1[j + PART_AGE] = 30 + 100 * Math.random();
+    // this.s1[j + PART_AGE] = 30 + 100 * Math.random();
+
+    this.roundRand();
+
+    this.s1[j + PART_XPOS] = 0 + this.randX * 0.3;
+    this.s1[j + PART_YPOS] = 0 + this.randY * 0.3;
+    this.s1[j + PART_ZPOS] = 1.5 + this.randZ * 0.1;
+
+    this.roundRand();
+
+    this.s1[j + PART_XVEL] = 0 + this.randX * 1.5;
+    this.s1[j + PART_YVEL] = 0 + this.randY * 1.5;
+    this.s1[j + PART_ZVEL] = 2 + this.randZ * 0.4;
+    // console.log(this.s2[j + PART_AGE])
+
+    this.s1[j + PART_AGE] = 0;
+    this.s1[j + PART_LIFELEFT] = Math.random() * 30 + 0;
+
     //----------------------------
     this.s2.set(this.s1); // COPY contents of state-vector s1 to s2.
   }
@@ -2425,23 +2459,6 @@ PartSys.prototype.solver = function () {
         // for all elements in s1,s2,s1dot;
         this.s2[n] = this.s1[n] + this.s1dot[n] * (g_timeStep * 0.001);
       }
-      /* // OLD 'BAD' solver never stops bouncing:
-  // Compute new position from current position, current velocity, & timestep
-  var j = 0;  // i==particle number; j==array index for i-th particle
-  for(var i = 0; i < this.partCount; i += 1, j+= PART_MAXVAR) {
-      this.s2[j + PART_XPOS] += this.s2[j + PART_XVEL] * (g_timeStep * 0.001);
-      this.s2[j + PART_YPOS] += this.s2[j + PART_YVEL] * (g_timeStep * 0.001); 
-      this.s2[j + PART_ZPOS] += this.s2[j + PART_ZVEL] * (g_timeStep * 0.001); 
-                // -- apply acceleration due to gravity to current velocity:
-      // 					 s2[PART_YVEL] -= (accel. due to gravity)*(timestep in seconds) 
-      //									 -= (9.832 meters/sec^2) * (g_timeStep/1000.0);
-      this.s2[j + PART_YVEL] -= this.grav*(g_timeStep*0.001);
-      // -- apply drag: attenuate current velocity:
-      this.s2[j + PART_XVEL] *= this.drag;
-      this.s2[j + PART_YVEL] *= this.drag; 
-      this.s2[j + PART_ZVEL] *= this.drag; 
-      }
-*/
       break;
     case SOLV_OLDGOOD: //-------------------------------------------------------------------
       // IMPLICIT or 'reverse time' solver
@@ -2464,31 +2481,136 @@ PartSys.prototype.solver = function () {
       //	IT WORKS BEAUTIFULLY! much more stable much more often...
       break;
     case SOLV_MIDPOINT: // Midpoint Method (see lecture notes)
-      console.log("NOT YET IMPLEMENTED: this.solvType==" + this.solvType);
+        // Midpoint Method (see lecture notes)
+        // Completed with the help of Copilot
+      var midPos = [];
+      var midVel = [];
+
+      this.dotFinder(midPos, midVel);
+
+      for (var i = 0; i < this.s1.length; i++) {
+        midPos[i] = this.s1[i] + midVel[i] * (g_timeStep * 0.001 * 0.5);
+        midVel[i] = this.s1dot[i] + midPos[i] * (g_timeStep * 0.001 * 0.5);
+      }
+
+      this.dotFinder(this.s2, this.s1dot);
+
+      for (var i = 0; i < this.s1.length; i++) {
+        this.s2[i] = this.s1[i] + this.s1dot[i] * (g_timeStep * 0.001);
+      }
       break;
     case SOLV_ADAMS_BASH: // Adams-Bashforth Explicit Integrator
-      console.log("NOT YET IMPLEMENTED: this.solvType==" + this.solvType);
-      break;
+      break;  
     case SOLV_RUNGEKUTTA: // Arbitrary degree, set by 'solvDegree'
-      console.log("NOT YET IMPLEMENTED: this.solvType==" + this.solvType);
+      // @TODO: Degree should be editable
+      // Completed with the help of Copilot
+      var degree = 3;
+
+      // calculate intermediate k values
+      var k = [];
+      for (var i = 0; i <= degree; i++) {
+        k[i] = [];
+        for (var j = 0; j < this.s1.length; j++) {
+          k[i][j] = 0;
+        }
+      }
+      var sTemp = [];
+      for (var j = 0; j < this.s1.length; j++) {
+        sTemp[j] = this.s1[j];
+      }
+
+      // calculate intermediate values of k
+      for (var i = 0; i < degree; i++) {
+        this.dotFinder(sTemp, k[i]);
+        for (var j = 0; j < this.s1.length; j++) {
+          sTemp[j] = this.s1[j] + k[i][j] * (g_timeStep * 0.001) / (degree + 1);
+        }
+      }
+      this.dotFinder(sTemp, k[degree]);
+
+      // use k values to update the state
+      for (var n = 0; n < this.s1.length; n++) {
+        this.s2[n] = this.s1[n];
+        for (var i = 0; i <= degree; i++) {
+          this.s2[n] += k[i][n] * (g_timeStep * 0.001) / (degree + 1);
+        }
+      }
       break;
     case SOLV_BACK_EULER: // 'Backwind' or Implicit Euler
-      console.log("NOT YET IMPLEMENTED: this.solvType==" + this.solvType);
+      // Completed with the help of Copilot
+      this.dotFinder(this.s2, this.s1dot);
+
+      for (var n = 0; n < this.s1.length; n++) {
+          this.s2[n] = this.s1[n] / (1 + g_timeStep * 0.001 * this.s1dot[n]);
+      }
       break;
     case SOLV_BACK_MIDPT: // 'Backwind' or Implicit Midpoint
-      console.log("NOT YET IMPLEMENTED: this.solvType==" + this.solvType);
+      // Midpoint Method with backwards differentiation formula
+      // Completed with the help of Copilot
+      var midPos = [];
+      var midVel = [];
+
+      this.dotFinder(midPos, midVel);
+
+      for (var i = 0; i < this.s1.length; i++) {
+        midPos[i] = this.s1[i] - midVel[i] * (g_timeStep * 0.001 * 0.5);
+        midVel[i] = this.s1dot[i] - midPos[i] * (g_timeStep * 0.001 * 0.5);
+      }
+
+      this.dotFinder(this.s2, this.s1dot);
+
+      for (var i = 0; i < this.s1.length; i++) {
+        this.s2[i] = this.s1[i] - this.s1dot[i] * (g_timeStep * 0.001);
+      }
       break;
     case SOLV_BACK_ADBASH: // 'Backwind' or Implicit Adams-Bashforth
-      console.log("NOT YET IMPLEMENTED: this.solvType==" + this.solvType);
+      // Completed with the help of Copilot
+      var k = [];
+      for (var i = 0; i < this.s1.length; i++) {
+        k[i] = 0;
+      }
+
+      this.dotFinder(this.s2, k);
+
+      for (var n = 0; n < this.s1.length; n++) {
+        this.s2[n] = this.s1[n] - k[n] * (g_timeStep * 0.001);
+      }
       break;
     case SOLV_VERLET: // Verlet semi-implicit integrator;
-      console.log("NOT YET IMPLEMENTED: this.solvType==" + this.solvType);
+      // Completed with the help of Copilot
+      // Verlet Integration Method
+      var x_temp = this.s2[PART_XPOS];
+      this.s2[PART_XPOS] = 2 * this.s2[PART_XPOS] - this.s1[PART_XPOS] + 
+        this.s2[PART_X_FTOT] * Math.pow(g_timeStep * 0.001, 2);
+      this.s1[PART_XPOS] = x_temp;
+
+      var y_temp = this.s2[PART_YPOS];
+      this.s2[PART_YPOS] = 2 * this.s2[PART_YPOS] - this.s1[PART_YPOS] + 
+        this.s2[PART_Y_FTOT] * Math.pow(g_timeStep * 0.001, 2);
+      this.s1[PART_YPOS] = y_temp;
+
+      var z_temp = this.s2[PART_ZPOS];
+      this.s2[PART_ZPOS] = 2 * this.s2[PART_ZPOS] - this.s1[PART_ZPOS] + 
+        this.s2[PART_Z_FTOT] * Math.pow(g_timeStep * 0.001, 2);
+      this.s1[PART_ZPOS] = z_temp;
       break;
     case SOLV_VEL_VERLET: // 'Velocity-Verlet'semi-implicit integrator
-      console.log("NOT YET IMPLEMENTED: this.solvType==" + this.solvType);
+      // Velocity Verlet Algorithm
+      this.dotFinder(this.s2, this.s1dot);
+      for (var i = 0; i < this.s1.length; i++) {
+        this.s2[i] = this.s1[i] + this.s1dot[i] * (g_timeStep * 0.001);
+        this.s1dot[i] += this.s2[i] * (g_timeStep * 0.001);
+      }
       break;
     case SOLV_LEAPFROG: // 'Leapfrog' integrator
-      console.log("NOT YET IMPLEMENTED: this.solvType==" + this.solvType);
+      // Leapfrog Method (also called the Störmer-Verlet method)
+      // Completed with the help of Copilot
+      var h = g_timeStep * 0.001;
+      this.dotFinder(this.s1dot, this.s2);
+
+      for (var i = 0; i < this.s1.length; i++) {
+        this.s2[i] = this.s1[i] + this.s1dot[i] * h + this.s2[i] * h * h / 2;
+      }
       break;
     default:
       console.log("?!?! unknown solver: this.solvType==" + this.solvType);
@@ -2711,6 +2833,8 @@ PartSys.prototype.doConstraints = function ( limitList ) {
           // console.log(wallWidthAxis, wallWidthScalar);
           // console.log(wallWidthNormal.elements);
 
+          // Completed with the help of Copilot
+
           // Wall center
           var wallCenter = new Vector3([
             (xMax + xMin) / 2,
@@ -2891,8 +3015,28 @@ PartSys.prototype.doConstraints = function ( limitList ) {
         break;
       case LIM_MAT_DISC:
         break;
-      case LIM_MAT_BOX:
-        break;      
+      case LIM_SPHERE: 
+        // Completed with the help of Copilot
+        if (!this.circle) return;
+        var j = m * PART_MAXVAR; 
+        for(; m < mmax; m++, j += PART_MAXVAR) { 
+          var x = this.s2[j + PART_XPOS] - limitList[k].xPos;; 
+          var y = this.s2[j + PART_YPOS] - limitList[k].yPos;;; 
+          var z = this.s2[j + PART_ZPOS] - limitList[k].zPos;;; 
+          var r = Math.sqrt(x*x + y*y + z*z); 
+          if (r > limitList[k].radius) { 
+            var nx = x/r; 
+            var ny = y/r; 
+            var nz = z/r; 
+            this.s2[j + PART_XPOS] = limitList[k].radius * nx; 
+            this.s2[j + PART_YPOS] = limitList[k].radius * ny; 
+            this.s2[j + PART_ZPOS] = limitList[k].radius * nz; 
+            this.s2[j + PART_XVEL] = -this.s2[j + PART_XVEL]; 
+            this.s2[j + PART_YVEL] = -this.s2[j + PART_YVEL]; 
+            this.s2[j + PART_ZVEL] = -this.s2[j + PART_ZVEL]; 
+          }
+        }
+        break; 
       default:
         console.log("!!!doConstraints() limitList[",k,"] invalid limitType:", limitList[k].limitType);
         break;

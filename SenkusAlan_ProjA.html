@@ -10,7 +10,39 @@
     Please use a browser that supports "canvas"
     </canvas>
 
-    <script src="lib/SenkusAlan_ProjC_mdls.js"></script>
+    <p>WASD to move. Arrow Keys to look around.</p>
+    <p>R to shake System 1</p>
+    <p>1 To pause system 1, 2 to step system 1, 3 to resume system 1</p>
+
+    <!-- Buttons -->
+    <div id="buttons">
+      <button id="impulse" onclick="resetPos()">Impulse All Systems</button>
+    </div>
+
+    <!-- Select -->
+    <div id="select">
+      <label for="select1">Select Solver:</label>
+      <select id="select1">
+        <option value="0">Euler Explicit</option>
+        <option value="1">Implicit Old Good (Reverse-Time)</option>
+        <option value="2">Midpoint</option>
+        <option value="3">Rungekutta (degree = 3)</option>
+        <option value="4">Implicit Euler</option>
+        <option value="5">Implicit Midpoint</option>
+        <option value="6">Implicit Adams-Bashforth</option>
+        <option value="7">Verlet semi-implicit</option>
+        <option value="8">'Velocity-Verlet'semi-implicit</option>
+        <option value="9">'Leapfrog' integrator</option>
+      </select>
+    </div>
+
+    <!-- Checkbox -->
+    <div id="checkbox">
+      <label for="checkbox1">System 1 Sphere Constraint</label>
+      <input onchange="onSphere()" type="checkbox" id="checkbox1" checked>
+    </div>
+
+    <!-- <script src="lib/SenkusAlan_ProjC_mdls.js"></script> -->
     <script src="lib/webgl-utils.js"></script>
     <script src="lib/webgl-debug.js"></script>
     <script src="lib/cuon-utils.js"></script>
