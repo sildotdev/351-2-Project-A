@@ -2780,6 +2780,10 @@ PartSys.prototype.doConstraints = function ( limitList ) {
                 this.s2[j + PART_XVEL] = VNew.elements[0]
                 this.s2[j + PART_YVEL] = VNew.elements[1]
                 this.s2[j + PART_ZVEL] = VNew.elements[2]
+
+                this.s2[j + PART_XPOS] = this.s1[j + PART_XPOS]
+                this.s2[j + PART_YPOS] = this.s1[j + PART_YPOS]
+                this.s2[j + PART_ZPOS] = this.s1[j + PART_ZPOS]
               }
             } else if (worldToWallS1.elements[2] <= 0 && worldToWallS2.elements[2] > 0) {
               // particle moved up thru bottom
@@ -2787,6 +2791,10 @@ PartSys.prototype.doConstraints = function ( limitList ) {
                 this.s2[j + PART_XVEL] = VNew.elements[0]
                 this.s2[j + PART_YVEL] = VNew.elements[1]
                 this.s2[j + PART_ZVEL] = VNew.elements[2]
+
+                this.s2[j + PART_XPOS] = this.s1[j + PART_XPOS]
+                this.s2[j + PART_YPOS] = this.s1[j + PART_YPOS]
+                this.s2[j + PART_ZPOS] = this.s1[j + PART_ZPOS]
               }
             }
           } else {
